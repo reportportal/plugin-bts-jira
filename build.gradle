@@ -1,0 +1,131 @@
+buildscript {
+    repositories {
+        mavenCentral()
+        jcenter()
+        maven { url "https://plugins.gradle.org/m2/" }
+    }
+//    dependencies {
+//        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.13.RELEASE")
+//
+//    }
+}
+
+plugins {
+    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+    id 'net.researchgate.release' version '2.4.1'
+    id "com.jfrog.bintray" version "1.7"
+}
+
+
+apply plugin: 'java'
+apply plugin: 'jacoco'
+apply from: 'build-quality.gradle'
+//apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/4.0/build-info.gradle'
+//apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/4.0/release-service.gradle'
+
+//dependencyManagement {
+//    imports {
+//        mavenBom "org.springframework.boot:spring-boot-dependencies:1.5.13.RELEASE"
+//    }
+//}
+
+project.ext {
+    releaseMode = project.hasProperty("releaseMode")
+    pluginID = "jira-bts"
+    pluginsDir = "$buildDir/plugins"
+}
+
+repositories {
+    mavenCentral()
+    maven { url "http://dl.bintray.com/epam/reportportal" }
+    maven { url "https://m2proxy.atlassian.com/repository/public" }
+
+    if (!releaseMode) {
+        maven { url 'https://jitpack.io' }
+    }
+
+
+}
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+description = 'EPAM Report portal. Jira Integration Plugin'
+
+dependencies {
+    if (releaseMode) {
+        compile('com.github.reportportal:plugin-api:43c7d0c')
+        compile 'com.github.reportportal:commons-model:7ffbf4e'
+
+    } else {
+        compile 'com.github.reportportal:plugin-api:7a9a353'
+        compile 'com.github.reportportal:commons-model:7ffbf4e'
+    }
+
+    compile group: 'com.google.guava', name: 'guava', version: '25.1-jre'
+
+    compile 'ch.qos.logback:logback-classic:1.2.3'
+    compile 'org.slf4j:slf4j-api:1.7.25'
+
+    compile 'org.jasypt:jasypt:1.9.2'
+
+    compile('com.atlassian.jira:jira-rest-java-client-core:4.0.0')
+    compile('com.atlassian.fugue:fugue:2.6.1')
+
+    compile 'net.oauth.core:oauth:20090617'
+    compile 'net.oauth.core:oauth-httpclient4:20090913'
+
+    compile 'org.apache.tika:tika-core:1.14'
+
+    testCompile 'org.springframework:spring-test:5.0.9.RELEASE'
+    testCompile 'org.hamcrest:hamcrest-all:1.3'
+    testCompile 'junit:junit:4.12'
+    testCompile 'org.mockito:mockito-all:2.0.2-beta'
+}
+
+test {
+    jacocoTestReport {
+        reports {
+            xml.enabled true
+        }
+    }
+}
+
+build.dependsOn jacocoTestReport
+
+task wrapper(type: Wrapper) {
+    gradleVersion = '4.5.1'
+}
+
+jar {
+    manifest {
+        attributes(
+                "Class-Path": configurations.compile.collect { it.getName() }.join(' '),
+                "Plugin-Id": "${pluginID}",
+                "Plugin-Version": "${project.version}",
+                "Plugin-Provider": "Andrei Varabyeu",
+                "Plugin-Class": "com.epam.reportportal.extension.bugtracking.jira.JiraStrategyPlugin",
+//                "Plugin-Dependencies": ""
+        )
+    }
+}
+
+task plugin(type: Jar) {
+    baseName = "plugin-${pluginID}"
+    into('classes') {
+        with jar
+    }
+    into('lib') {
+        from configurations.compile
+    }
+    extension('zip')
+}
+
+task assemblePlugin(type: Copy) {
+    from plugin
+    into pluginsDir
+}
+
+task assemblePlugins(type: Copy) {
+    dependsOn subprojects.assemblePlugin
+}
