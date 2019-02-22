@@ -31,7 +31,7 @@ apply from: 'build-quality.gradle'
 
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
-    pluginID = "jira-bts"
+    pluginID = "JIRA"
     pluginsDir = "$buildDir/plugins"
 }
 
