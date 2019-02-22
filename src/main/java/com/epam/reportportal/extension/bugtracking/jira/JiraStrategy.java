@@ -115,7 +115,7 @@ public class JiraStrategy implements BtsExtension {
 				.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Project is not specified."));
 
 		validateExternalSystemDetails(system);
-		try (JiraRestClient restClient = getClient(url, username, password)) {
+		try (JiraRestClient restClient = getClient(url, username, simpleEncryptor.decrypt(password))) {
 			return restClient.getProjectClient().getProject(project).claim() != null;
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
