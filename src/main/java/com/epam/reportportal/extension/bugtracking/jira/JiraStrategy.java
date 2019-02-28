@@ -100,7 +100,7 @@ public class JiraStrategy implements BtsExtension {
 	));
 
 	@Override
-	public boolean connectionTest(Integration system) {
+	public boolean testConnection(Integration system) {
 		IntegrationParams params = ofNullable(system.getParams()).orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 				"Integration params are not specified."
 		));
