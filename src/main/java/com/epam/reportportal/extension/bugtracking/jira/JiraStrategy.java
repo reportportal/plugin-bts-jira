@@ -46,7 +46,6 @@ import com.epam.ta.reportportal.ws.model.externalsystem.PostTicketRQ;
 import com.epam.ta.reportportal.ws.model.externalsystem.Ticket;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
-import com.google.common.collect.Sets;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
@@ -101,9 +100,8 @@ public class JiraStrategy implements BtsExtension {
 	));
 
 	@Override
-	public boolean connectionTest(Integration system) {
-		IntegrationParams params = ofNullable(system.getParams()).orElseThrow(() -> new ReportPortalException(
-				ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+	public boolean testConnection(Integration system) {
+		IntegrationParams params = ofNullable(system.getParams()).orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 				"Integration params are not specified."
 		));
 
@@ -117,7 +115,7 @@ public class JiraStrategy implements BtsExtension {
 				.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Project is not specified."));
 
 		validateExternalSystemDetails(system);
-		try (JiraRestClient restClient = getClient(url, username, password)) {
+		try (JiraRestClient restClient = getClient(url, username, simpleEncryptor.decrypt(password))) {
 			return restClient.getProjectClient().getProject(project).claim() != null;
 		} catch (Exception e) {
 			LOGGER.error(e.getMessage(), e);
@@ -140,11 +138,9 @@ public class JiraStrategy implements BtsExtension {
 		SearchResult issues = findIssue(id, jiraRestClient);
 		if (issues.getTotal() > 0) {
 			Issue issue = jiraRestClient.getIssueClient().getIssue(id).claim();
-			return Optional.of(JIRATicketUtils.toTicket(
-					issue,
+			return Optional.of(JIRATicketUtils.toTicket(issue,
 					JiraProps.URL.getParam(details)
-							.orElseThrow(() -> new ReportPortalException(
-									ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+							.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 									"Url is not specified."
 							))
 			));
@@ -251,14 +247,12 @@ public class JiraStrategy implements BtsExtension {
 	// TODO consider avoiding this method
 	//    @Cacheable(value = CacheConfiguration.JIRA_PROJECT_CACHE, key = "#details")
 	private Project getProject(JiraRestClient jiraRestClient, Integration system) {
-		IntegrationParams params = ofNullable(system.getParams()).orElseThrow(() -> new ReportPortalException(
-				ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+		IntegrationParams params = ofNullable(system.getParams()).orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 				"Integration params are not specified."
 		));
 		return jiraRestClient.getProjectClient()
 				.getProject(JiraProps.PROJECT.getParam(params)
-						.orElseThrow(() -> new ReportPortalException(
-								ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+						.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 								"Project is not specified."
 						)))
 				.claim();
@@ -402,7 +396,9 @@ public class JiraStrategy implements BtsExtension {
 	 * @param details External system details
 	 */
 	private void validateExternalSystemDetails(Integration details) {
-		AuthType authType = JiraProps.AUTH_TYPE.getParam(details.getParams()).map(AuthType::findByName).get();
+		AuthType authType = AuthType.findByName(JiraProps.AUTH_TYPE.getParam(details.getParams())
+				.orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Auth type value cannot be NULL")))
+				.orElseThrow(() -> new ReportPortalException(ErrorType.INCORRECT_AUTHENTICATION_TYPE));
 		if (AuthType.BASIC.equals(authType)) {
 			expect(JiraProps.USER_NAME.getParam(details.getParams()), isPresent()).verify(UNABLE_INTERACT_WITH_INTEGRATION,
 					"Username value cannot be NULL"
