@@ -29,6 +29,9 @@ import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.auth.BasicHttpAuthenticationHandler;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
+import com.epam.reportportal.extension.IntegrationGroupEnum;
+import com.epam.reportportal.extension.PluginCommand;
+import com.epam.reportportal.extension.ReportPortalExtensionPoint;
 import com.epam.reportportal.extension.bugtracking.BtsExtension;
 import com.epam.ta.reportportal.binary.DataStoreService;
 import com.epam.ta.reportportal.commons.Preconditions;
@@ -65,6 +68,7 @@ import static com.epam.ta.reportportal.commons.Predicates.*;
 import static com.epam.ta.reportportal.commons.validation.BusinessRule.expect;
 import static com.epam.ta.reportportal.commons.validation.Suppliers.formattedSupplier;
 import static com.epam.ta.reportportal.ws.model.ErrorType.UNABLE_INTERACT_WITH_INTEGRATION;
+import static java.util.Optional.empty;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
 
@@ -78,7 +82,7 @@ import static java.util.stream.Collectors.toSet;
 // TODO REVIEW this class after full JIRA support implementation
 @Extension
 @Component
-public class JiraStrategy implements BtsExtension {
+public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
 	private static final String BUG = "Bug";
 	private static final Logger LOGGER = LoggerFactory.getLogger(JiraStrategy.class);
@@ -98,6 +102,21 @@ public class JiraStrategy implements BtsExtension {
 	private Supplier<JIRATicketDescriptionService> descriptionService = Suppliers.memoize(() -> new JIRATicketDescriptionService(logRepository,
 			itemRepository
 	));
+
+	@Override
+	public List<String> getCommandNames() {
+		return Collections.emptyList();
+	}
+
+	@Override
+	public PluginCommand getCommandToExecute(String commandName) {
+		return null;
+	}
+
+	@Override
+	public IntegrationGroupEnum getIntegrationGroup() {
+		return IntegrationGroupEnum.BTS;
+	}
 
 	@Override
 	public boolean testConnection(Integration system) {

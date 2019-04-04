@@ -35,8 +35,7 @@ import java.util.HashMap;
 @Ignore
 public class TicketDescriptionServiceTest {
 
-	private JIRATicketDescriptionService descriptionService = new JIRATicketDescriptionService(
-			Mockito.mock(LogRepository.class),
+	private JIRATicketDescriptionService descriptionService = new JIRATicketDescriptionService(Mockito.mock(LogRepository.class),
 			Mockito.mock(TestItemRepository.class)
 	);
 
@@ -48,13 +47,12 @@ public class TicketDescriptionServiceTest {
 		HashMap<Long, String> backLinks = new HashMap<>();
 		backLinks.put(1L, "https://localhost:8443/reportportal-ws/");
 		postTicketRQ.setBackLinks(backLinks);
-		String result = descriptionService.getDescription(null, postTicketRQ);
+		String result = descriptionService.getDescription(postTicketRQ);
 		Assert.assertNotNull(result);
 		Assert.assertEquals("", result);
 		postTicketRQ.setIsIncludeLogs(false);
-		String description = descriptionService.getDescription(Collections.singletonList(1L), postTicketRQ);
+		String description = descriptionService.getDescription(postTicketRQ);
 		Assert.assertNotNull(description);
-		//		Assert.assertEquals("h3.*Back link to Report Portal:*\n - [Link to defect|https://localhost:8443/reportportal-ws/]\r\n\n", description);
 	}
 
 	@Test
@@ -64,7 +62,7 @@ public class TicketDescriptionServiceTest {
 		postTicketRQ.setNumberOfLogs(1);
 		postTicketRQ.setIsIncludeLogs(true);
 		postTicketRQ.setBackLinks(new HashMap<>());
-		String description = descriptionService.getDescription(Collections.singletonList(2L), postTicketRQ);
+		String description = descriptionService.getDescription(postTicketRQ);
 		Assert.assertNotNull(description);
 		Assert.assertEquals(
 				"h3.*Test execution log:*\n{panel:title=Test execution log|borderStyle=solid|borderColor=#ccc|titleColor=#34302D|titleBGColor=#6DB33F}{code} Time: 05/06/2013 18:26:00, Log: Demo Test Log Message_spdOP\n{code}{panel}\n",
@@ -81,13 +79,11 @@ public class TicketDescriptionServiceTest {
 		HashMap<Long, String> backLinks = new HashMap<>();
 		backLinks.put(3L, "https://localhost:8443/reportportal-ws/");
 		postTicketRQ.setBackLinks(backLinks);
-		String description = descriptionService.getDescription(Collections.singletonList(3L), postTicketRQ);
+		String description = descriptionService.getDescription(postTicketRQ);
 		Assert.assertNotNull(description);
-		//		 Assert.assertEquals("h3.*Back link to Report Portal:*\n - [Link to defect|https://localhost:8443/reportportal-ws/]\r\n\nh3.*Test execution log:*\n{panel:title=Test execution log|borderStyle=solid|borderColor=#ccc|titleColor=#34302D|titleBGColor=#6DB33F}{code} Time: 05/06/2013 18:26:00, Log: Demo Test Log Message_spdOP\n{code}{panel}\n",description);
 		postTicketRQ.setIsIncludeLogs(false);
 		postTicketRQ.setIsIncludeScreenshots(false);
-		String descriptionWithoutLogs = descriptionService.getDescription(Collections.singletonList(3L), postTicketRQ);
+		String descriptionWithoutLogs = descriptionService.getDescription(postTicketRQ);
 		Assert.assertNotNull(descriptionWithoutLogs);
-		//		 Assert.assertEquals("h3.*Back link to Report Portal:*\n - [Link to defect|https://localhost:8443/reportportal-ws/]\r\n\n",descriptionWithoutLogs);
 	}
 }
