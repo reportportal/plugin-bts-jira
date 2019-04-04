@@ -38,7 +38,6 @@ import com.epam.ta.reportportal.ws.model.externalsystem.Ticket;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang3.StringUtils;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
@@ -79,7 +78,7 @@ public class JIRATicketUtils {
 	}
 
 	public static IssueInput toIssueInput(JiraRestClient client, Project jiraProject, Optional<IssueType> issueType, PostTicketRQ ticketRQ,
-			Iterable<Long> itemIds, JIRATicketDescriptionService descriptionService) {
+			JIRATicketDescriptionService descriptionService) {
 		String userDefinedDescription = "";
 		IssueInputBuilder issueInputBuilder = new IssueInputBuilder(jiraProject, issueType.get());
 		GetCreateIssueMetadataOptions options = new GetCreateIssueMetadataOptionsBuilder().withExpandedIssueTypesFields()
@@ -202,7 +201,7 @@ public class JIRATicketUtils {
 				}
 			}
 		}
-		issueInputBuilder.setDescription(userDefinedDescription.concat("\n").concat(descriptionService.getDescription(itemIds, ticketRQ)));
+		issueInputBuilder.setDescription(userDefinedDescription.concat("\n").concat(descriptionService.getDescription(ticketRQ)));
 		return issueInputBuilder.build();
 	}
 

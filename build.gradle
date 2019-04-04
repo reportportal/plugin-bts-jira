@@ -1,4 +1,9 @@
 buildscript {
+    
+    ext {
+        springBootVersion = '2.1.0.RELEASE'
+    }
+    
     repositories {
         mavenCentral()
         jcenter()
@@ -8,6 +13,11 @@ buildscript {
 //        classpath("org.springframework.boot:spring-boot-gradle-plugin:1.5.13.RELEASE")
 //
 //    }
+    dependencies {
+        classpath "io.spring.gradle:dependency-management-plugin:1.0.2.RELEASE"
+        classpath("org.springframework.boot:spring-boot-gradle-plugin:${springBootVersion}")
+//        classpath 'com.bmuschko:gradle-docker-plugin:3.0.12'
+    }
 }
 
 plugins {
@@ -19,6 +29,7 @@ plugins {
 
 apply plugin: 'java'
 apply plugin: 'jacoco'
+apply plugin: 'org.springframework.boot'
 apply from: 'build-quality.gradle'
 //apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/4.0/build-info.gradle'
 //apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/4.0/release-service.gradle'
@@ -58,8 +69,8 @@ dependencies {
         compile 'com.github.reportportal:commons-model:7ffbf4e'
 
     } else {
-        compile 'com.github.reportportal:plugin-api:8b1a6f82'
-        compile 'com.github.reportportal:commons-model:7ffbf4e'
+        compile 'com.github.reportportal:plugin-api:fbf67ae9'
+        compile 'com.github.reportportal:commons-model:704da28'
     }
 
     compile group: 'com.google.guava', name: 'guava', version: '25.1-jre'

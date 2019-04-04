@@ -200,7 +200,6 @@ public class JiraStrategy implements BtsExtension {
 					jiraProject,
 					issueTypeOptional,
 					ticketRQ,
-					ofNullable(ticketRQ.getBackLinks()).map(Map::keySet).orElseGet(Collections::emptySet),
 					descriptionService.get()
 			);
 
@@ -273,7 +272,7 @@ public class JiraStrategy implements BtsExtension {
 		String description = issueInput.getField(IssueFieldId.DESCRIPTION_FIELD.id).getValue().toString();
 		if (null != description) {
 			// !54086a2c3c0c7d4446beb3e6.jpg| or [^54086a2c3c0c7d4446beb3e6.xml]
-			String regex = "(!|\\[\\^).{24}.{0,5}(\\||\\])";
+			String regex = "(!|\\[\\^)\\w+\\.\\w{0,5}(\\||\\])";
 			Matcher matcher = Pattern.compile(regex).matcher(description);
 			while (matcher.find()) {
 				String rawValue = description.subSequence(matcher.start(), matcher.end()).toString();
