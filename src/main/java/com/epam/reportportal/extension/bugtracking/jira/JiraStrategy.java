@@ -473,7 +473,6 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 				.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
 		String password = JiraProps.PASSWORD.getParam(params)
 				.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
-		//		String project = (String) params.getParams().get("project");
 
 		return new AsynchronousJiraRestClientFactory().create(URI.create(url),
 				new BasicHttpAuthenticationHandler(username, simpleEncryptor.decrypt(password))
@@ -489,7 +488,6 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 		String password = ofNullable(postTicketRQ.getPassword()).orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 				"Password is not specified."
 		));
-		//		String project = (String) params.getParams().get("project");
 
 		return new AsynchronousJiraRestClientFactory().create(URI.create(url), new BasicHttpAuthenticationHandler(username, password));
 	}
