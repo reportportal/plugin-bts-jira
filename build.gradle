@@ -1,29 +1,13 @@
-buildscript {
-
-    repositories {
-        mavenCentral()
-        jcenter()
-        maven { url "https://plugins.gradle.org/m2/" }
-    }
-}
-
 plugins {
-    id "io.spring.dependency-management" version "1.0.3.RELEASE"
+    id "io.spring.dependency-management" version "1.0.7.RELEASE"
     id 'net.researchgate.release' version '2.8.0'
     id "com.jfrog.bintray" version "1.8.4"
+    id 'java'
+    id 'jacoco'
 }
 
-
-apply plugin: 'java'
-apply plugin: 'jacoco'
 apply from: 'build-quality.gradle'
 apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/release-commons.gradle'
-
-//dependencyManagement {
-//    imports {
-//        mavenBom "org.springframework.boot:spring-boot-dependencies:1.5.13.RELEASE"
-//    }
-//}
 
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
@@ -50,8 +34,8 @@ description = 'EPAM Report portal. Jira Integration Plugin'
 
 dependencies {
     if (releaseMode) {
-        compile('com.github.reportportal:plugin-api:30f47d4')
-        compile 'com.github.reportportal:commons-model:7ffbf4e'
+        compile('com.github.reportportal:plugin-api:5.0.0-BETA-3')
+        compile 'com.github.reportportal:commons-model:5.0.0-BETA-3'
 
     } else {
         compile 'com.github.reportportal:plugin-api:30f47d4'
