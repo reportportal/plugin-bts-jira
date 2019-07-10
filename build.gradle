@@ -44,15 +44,15 @@ dependencies {
         compile 'com.github.reportportal:commons-model:7ffbf4e'
     }
 
-    compile group: 'com.google.guava', name: 'guava', version: '25.1-jre'
+    compile group: 'com.google.guava', name: 'guava', version: '26.0-jre'
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'org.slf4j:slf4j-api:1.7.25'
 
     compile 'org.jasypt:jasypt:1.9.2'
 
-    compile('com.atlassian.jira:jira-rest-java-client-core:4.0.0')
-    compile('com.atlassian.fugue:fugue:2.6.1')
+    compile('com.atlassian.jira:jira-rest-java-client-core:5.1.2-2bd0a62e')
+    compile('io.atlassian.fugue:fugue:4.7.2')
 
     compile 'net.oauth.core:oauth:20090617'
     compile 'net.oauth.core:oauth-httpclient4:20090913'
