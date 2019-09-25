@@ -4,10 +4,11 @@ plugins {
     id "com.jfrog.bintray" version "1.8.4"
     id 'java'
     id 'jacoco'
+    id 'com.github.johnrengelman.shadow' version '5.1.0'
 }
 
 apply from: 'build-quality.gradle'
-apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/release-commons.gradle'
+apply from: 'release.gradle'
 
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
@@ -89,6 +90,13 @@ jar {
                 "Plugin-Class": "com.epam.reportportal.extension.bugtracking.jira.JiraStrategyPlugin",
 //                "Plugin-Dependencies": ""
         )
+    }
+}
+
+shadowJar {
+    zip64 true
+    dependencies {
+        include(dependency('commons-lang:commons-lang'))
     }
 }
 
