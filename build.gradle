@@ -87,6 +87,7 @@ jar {
                 "Plugin-Version": "${project.version}",
                 "Plugin-Provider": "Andrei Varabyeu",
                 "Plugin-Class": "com.epam.reportportal.extension.bugtracking.jira.JiraStrategyPlugin",
+                "Plugin-Service": "api"
 //                "Plugin-Dependencies": ""
         )
     }
