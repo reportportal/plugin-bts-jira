@@ -235,11 +235,12 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 			AttachmentInput[] attachmentInputs = new AttachmentInput[binaryData.size()];
 			int counter = 0;
 			for (Map.Entry<String, String> binaryDataEntry : binaryData.entrySet()) {
-				InputStream data = dataStorage.load(binaryDataEntry.getKey());
-				if (null != data) {
-					attachmentInputs[counter] = new AttachmentInput(binaryDataEntry.getValue(), data);
+				Optional<InputStream> data = dataStorage.load(binaryDataEntry.getKey());
+				if (data.isPresent()) {
+					attachmentInputs[counter] = new AttachmentInput(binaryDataEntry.getValue(), data.get());
 					counter++;
 				}
+
 			}
 			if (counter != 0) {
 				client.getIssueClient().addAttachments(issue.getAttachmentsUri(), Arrays.copyOf(attachmentInputs, counter));

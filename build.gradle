@@ -40,9 +40,9 @@ dependencies {
         compile 'com.epam.reportportal:commons-model:5.0.0-BETA-3'
 
     } else {
-        implementation 'com.github.reportportal:plugin-api:30f47d4'
-        annotationProcessor 'com.github.reportportal:plugin-api:30f47d4'
-        compile 'com.github.reportportal:commons-model:7ffbf4e'
+        implementation 'com.github.reportportal:plugin-api:8cb1efe6'
+        annotationProcessor 'com.github.reportportal:plugin-api:8cb1efe6'
+        compile 'com.github.reportportal:commons-model:5.0.0-BETA-13'
     }
 
     compile group: 'com.google.guava', name: 'guava', version: '26.0-jre'
@@ -97,7 +97,7 @@ jar {
 shadowJar {
     zip64 true
     dependencies {
-        include(dependency('commons-lang:commons-lang'))
+        include(dependency('org.apache.commons:commons-lang3'))
     }
 }
 
