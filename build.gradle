@@ -35,14 +35,14 @@ description = 'EPAM Report portal. Jira Integration Plugin'
 
 dependencies {
     if (releaseMode) {
-        implementation 'com.epam.reportportal:plugin-api:5.0.0-BETA-3'
-        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-BETA-3'
-        compile 'com.epam.reportportal:commons-model:5.0.0-BETA-3'
+        implementation 'com.epam.reportportal:plugin-api:5.0.0-BETA-7'
+        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-BETA-7'
+        compile 'com.epam.reportportal:commons-model:5.0.0-BETA-13'
 
     } else {
-        implementation 'com.github.reportportal:plugin-api:8cb1efe6'
-        annotationProcessor 'com.github.reportportal:plugin-api:8cb1efe6'
-        compile 'com.github.reportportal:commons-model:5.0.0-BETA-13'
+        implementation 'com.github.reportportal:plugin-api:1acd136'
+        annotationProcessor 'com.github.reportportal:plugin-api:1acd136'
+        compile 'com.github.reportportal:commons-model:b629245'
     }
 
     compile group: 'com.google.guava', name: 'guava', version: '26.0-jre'

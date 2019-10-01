@@ -54,6 +54,7 @@ import org.pf4j.Extension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.InputStream;
@@ -87,7 +88,8 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 	private static final Logger LOGGER = LoggerFactory.getLogger(JiraStrategy.class);
 
 	@Autowired
-	private DataStoreService dataStorage;
+	@Qualifier("attachmentDataStoreService")
+	private DataStoreService dataStoreService;
 
 	@Autowired
 	private BasicTextEncryptor simpleEncryptor;
@@ -98,8 +100,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 	@Autowired
 	private TestItemRepository itemRepository;
 
-	private Supplier<JIRATicketDescriptionService> descriptionService = Suppliers.memoize(() -> new JIRATicketDescriptionService(
-			logRepository,
+	private Supplier<JIRATicketDescriptionService> descriptionService = Suppliers.memoize(() -> new JIRATicketDescriptionService(logRepository,
 			itemRepository
 	));
 
@@ -235,12 +236,12 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 			AttachmentInput[] attachmentInputs = new AttachmentInput[binaryData.size()];
 			int counter = 0;
 			for (Map.Entry<String, String> binaryDataEntry : binaryData.entrySet()) {
-				Optional<InputStream> data = dataStorage.load(binaryDataEntry.getKey());
+
+				Optional<InputStream> data = dataStoreService.load(binaryDataEntry.getKey());
 				if (data.isPresent()) {
 					attachmentInputs[counter] = new AttachmentInput(binaryDataEntry.getValue(), data.get());
 					counter++;
 				}
-
 			}
 			if (counter != 0) {
 				client.getIssueClient().addAttachments(issue.getAttachmentsUri(), Arrays.copyOf(attachmentInputs, counter));
