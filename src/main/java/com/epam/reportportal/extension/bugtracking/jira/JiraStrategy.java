@@ -105,8 +105,8 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 	));
 
 	@Override
-	public List<String> getCommandNames() {
-		return Collections.emptyList();
+	public Map<String, ?> getPluginParams() {
+		return Collections.emptyMap();
 	}
 
 	@Override

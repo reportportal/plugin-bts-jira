@@ -8,7 +8,7 @@ plugins {
 }
 
 apply from: 'build-quality.gradle'
-apply from: 'release.gradle'
+apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/release-fat.gradle'
 
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
@@ -35,13 +35,13 @@ description = 'EPAM Report portal. Jira Integration Plugin'
 
 dependencies {
     if (releaseMode) {
-        implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-1'
-        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-1'
+        implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
+        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
         compile 'com.epam.reportportal:commons-model:5.0.0-RC-1'
 
     } else {
-        implementation 'com.github.reportportal:plugin-api:5.0.0-RC-1'
-        annotationProcessor 'com.github.reportportal:plugin-api:5.0.0-RC-1'
+        implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
+        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
         compile 'com.github.reportportal:commons-model:5.0.0-RC-1'
     }
 
