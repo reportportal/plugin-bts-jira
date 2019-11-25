@@ -1,5 +1,4 @@
 language: java
-
 dist: trusty
 
 script: ./gradlew build

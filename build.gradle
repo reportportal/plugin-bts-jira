@@ -1,13 +1,13 @@
 plugins {
-    id "io.spring.dependency-management" version "1.0.7.RELEASE"
-    id 'net.researchgate.release' version '2.8.0'
+    id "io.spring.dependency-management" version "1.0.8.RELEASE"
+    id 'net.researchgate.release' version '2.8.1'
     id "com.jfrog.bintray" version "1.8.4"
     id 'java'
     id 'jacoco'
-    id 'com.github.johnrengelman.shadow' version '5.1.0'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
-apply from: 'build-quality.gradle'
+apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/build-quality.gradle'
 apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/release-fat.gradle'
 
 project.ext {
@@ -38,19 +38,14 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
         annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
         compile 'com.epam.reportportal:commons-model:5.0.0-RC-1'
-
     } else {
-        implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
-        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-2'
-        compile 'com.github.reportportal:commons-model:5.0.0-RC-1'
+        implementation 'com.github.reportportal:plugin-api:40d7f90'
+        annotationProcessor 'com.github.reportportal:plugin-api:40d7f90'
+        compile 'com.github.reportportal:commons-model:ac99b1a'
     }
-
-    compile group: 'com.google.guava', name: 'guava', version: '26.0-jre'
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'org.slf4j:slf4j-api:1.7.25'
-
-    compile 'org.jasypt:jasypt:1.9.2'
 
     compile 'io.atlassian.fugue:fugue:4.7.2'
     compile('com.atlassian.jira:jira-rest-java-client-core:5.1.6')
@@ -60,10 +55,10 @@ dependencies {
 
     compile 'org.apache.tika:tika-core:1.14'
 
-    testCompile 'org.springframework:spring-test:5.0.9.RELEASE'
+    testCompile 'org.springframework:spring-test:5.2.1.RELEASE'
     testCompile 'org.hamcrest:hamcrest-all:1.3'
     testCompile 'junit:junit:4.12'
-    testCompile 'org.mockito:mockito-all:2.0.2-beta'
+    testCompile 'org.mockito:mockito-all:1.10.19'
 }
 
 test {
@@ -100,11 +95,12 @@ shadowJar {
         include(dependency('org.apache.commons:commons-lang3'))
         include(dependency('io.atlassian.fugue:fugue'))
         include(dependency('com.atlassian.jira:jira-rest-java-client-core'))
+        include(dependency('com.atlassian.jira:jira-rest-java-client-api'))
     }
 }
 
 task plugin(type: Jar) {
-    baseName = "plugin-${pluginID}"
+    getArchiveBaseName().set("plugin-${pluginID}")
     into('classes') {
         with jar
     }

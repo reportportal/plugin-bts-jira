@@ -29,8 +29,8 @@ import com.epam.ta.reportportal.entity.log.Log;
 import com.epam.ta.reportportal.exception.ReportPortalException;
 import com.epam.ta.reportportal.ws.model.ErrorType;
 import com.epam.ta.reportportal.ws.model.externalsystem.PostTicketRQ;
-import org.apache.commons.collections4.CollectionUtils;
-import org.apache.commons.collections4.MapUtils;
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
@@ -53,13 +53,12 @@ import static java.util.Optional.ofNullable;
  * @author Dzmitry_Kavalets
  */
 public class JIRATicketDescriptionService {
-	private static final Logger LOGGER = LoggerFactory.getLogger(JIRATicketDescriptionService.class);
-
 	public static final String JIRA_MARKUP_LINE_BREAK = "\\\\ ";
 	public static final String BACK_LINK_HEADER = "h3.*Back link to Report Portal:*";
 	public static final String BACK_LINK_PATTERN = "[Link to defect|%s]%n";
 	public static final String COMMENTS_HEADER = "h3.*Test Item comments:*";
 	public static final String CODE = "{code}";
+	private static final Logger LOGGER = LoggerFactory.getLogger(JIRATicketDescriptionService.class);
 	private static final String IMAGE_CONTENT = "image";
 	private static final String IMAGE_HEIGHT_TEMPLATE = "|height=366!";
 
