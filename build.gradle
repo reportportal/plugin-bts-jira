@@ -94,6 +94,12 @@ shadowJar {
     zip64 true
     dependencies {
         exclude(dependency('com.github.reportportal:'))
+        exclude(dependency('org.springframework:'))
+        exclude(dependency('org.springframework.security:'))
+        exclude(dependency('org.springframework.data:'))
+        exclude(dependency('org.springframework.boot:'))
+        exclude(dependency('ch.qos.logback:'))
+        exclude(dependency('org.slf4j:'))
     }
 }
 
