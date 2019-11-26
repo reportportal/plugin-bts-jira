@@ -90,12 +90,10 @@ jar {
 }
 
 shadowJar {
+    configurations = [project.configurations.runtime]
     zip64 true
     dependencies {
-        include(dependency('org.apache.commons:commons-lang3'))
-        include(dependency('io.atlassian.fugue:fugue'))
-        include(dependency('com.atlassian.jira:jira-rest-java-client-core'))
-        include(dependency('com.atlassian.jira:jira-rest-java-client-api'))
+        exclude(dependency('com.github.reportportal:'))
     }
 }
 
