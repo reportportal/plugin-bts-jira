@@ -1,10 +1,7 @@
 plugins {
     id "io.spring.dependency-management" version "1.0.8.RELEASE"
-    id 'net.researchgate.release' version '2.8.1'
-    id "com.jfrog.bintray" version "1.8.4"
     id 'java'
     id 'jacoco'
-    id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 
 apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/build-quality.gradle'
@@ -24,8 +21,6 @@ repositories {
     if (!releaseMode) {
         maven { url 'https://jitpack.io' }
     }
-
-
 }
 
 sourceCompatibility = 1.8
