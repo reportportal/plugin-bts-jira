@@ -34,9 +34,9 @@ dependencies {
         annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-5'
         compile 'com.epam.reportportal:commons-model:5.0.0-RC-5'
     } else {
-        implementation 'com.github.reportportal:plugin-api:5.0.0-RC-5'
-        annotationProcessor 'com.github.reportportal:plugin-api:5.0.0-RC-5'
-        compile 'com.github.reportportal:commons-model:5.0.0-RC-5'
+        implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-5'
+        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-5'
+        compile 'com.epam.reportportal:commons-model:5.0.0-RC-5'
     }
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
@@ -89,6 +89,7 @@ shadowJar {
     zip64 true
     dependencies {
         exclude(dependency('com.github.reportportal:'))
+        exclude(dependency('com.epam.reportportal:'))
         exclude(dependency('org.springframework:'))
         exclude(dependency('org.springframework.security:'))
         exclude(dependency('org.springframework.data:'))
