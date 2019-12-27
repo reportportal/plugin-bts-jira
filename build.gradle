@@ -23,6 +23,16 @@ repositories {
     }
 }
 
+dependencyManagement {
+    imports {
+        if (releaseMode) {
+            mavenBom "com.epam.reportportal:commons-bom:5.0.0-RC-5"
+        } else {
+            mavenBom "com.github.reportportal:commons-bom:4b7ed8a"
+        }
+    }
+}
+
 sourceCompatibility = 1.8
 targetCompatibility = 1.8
 
@@ -30,9 +40,9 @@ description = 'EPAM Report portal. Jira Integration Plugin'
 
 dependencies {
     if (releaseMode) {
-        implementation 'com.epam.reportportal:plugin-api:5.0.0-RC-5'
-        annotationProcessor 'com.epam.reportportal:plugin-api:5.0.0-RC-5'
-        compile 'com.epam.reportportal:commons-model:5.0.0-RC-5'
+        implementation 'com.epam.reportportal:plugin-api'
+        annotationProcessor 'com.epam.reportportal:plugin-api'
+        compile 'com.epam.reportportal:commons-model'
     } else {
         implementation 'com.github.reportportal:plugin-api:5.0.0-RC-5'
         annotationProcessor 'com.github.reportportal:plugin-api:5.0.0-RC-5'
