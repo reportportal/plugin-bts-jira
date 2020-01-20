@@ -4,8 +4,8 @@ plugins {
     id 'jacoco'
 }
 
-apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/build-quality.gradle'
-apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/master/release-fat.gradle'
+apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/5.0.0/build-quality.gradle'
+apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/5.0.0/release-fat.gradle'
 
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
@@ -15,21 +15,13 @@ project.ext {
 
 repositories {
     mavenCentral()
-    maven { url "http://dl.bintray.com/epam/reportportal" }
     maven { url "https://m2proxy.atlassian.com/repository/public" }
-
-    if (!releaseMode) {
-        maven { url 'https://jitpack.io' }
-    }
+    releaseMode ? maven { url "http://dl.bintray.com/epam/reportportal" } : maven { url 'https://jitpack.io' }
 }
 
 dependencyManagement {
     imports {
-        if (releaseMode) {
-            mavenBom "com.epam.reportportal:commons-bom:5.0.0-RC-5"
-        } else {
-            mavenBom "com.github.reportportal:commons-bom:4b7ed8a"
-        }
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:5.0.0' : 'com.github.reportportal:commons-bom:4b7ed8a')
     }
 }
 
