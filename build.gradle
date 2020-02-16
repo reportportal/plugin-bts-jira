@@ -4,14 +4,15 @@ plugins {
     id 'jacoco'
 }
 
-apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/5.0.0/build-quality.gradle'
-apply from: 'https://raw.githubusercontent.com/reportportal/gradle-scripts/5.0.0/release-fat.gradle'
-
 project.ext {
     releaseMode = project.hasProperty("releaseMode")
     pluginID = "jira"
     pluginsDir = "$buildDir/plugins"
 }
+
+def branch = releaseMode ? '5.1.0' : 'develop'
+apply from: "https://raw.githubusercontent.com/reportportal/gradle-scripts/$branch/build-quality.gradle"
+apply from: "https://raw.githubusercontent.com/reportportal/gradle-scripts/$branch/release-fat.gradle"
 
 repositories {
     mavenCentral()
@@ -25,10 +26,8 @@ dependencyManagement {
     }
 }
 
-sourceCompatibility = 1.8
-targetCompatibility = 1.8
-
-description = 'EPAM Report portal. Jira Integration Plugin'
+sourceCompatibility = JavaVersion.VERSION_1_8
+targetCompatibility = JavaVersion.VERSION_1_8
 
 dependencies {
     if (releaseMode) {
@@ -36,9 +35,9 @@ dependencies {
         annotationProcessor 'com.epam.reportportal:plugin-api'
         compile 'com.epam.reportportal:commons-model'
     } else {
-        implementation 'com.github.reportportal:plugin-api:5.0.0-RC-5'
-        annotationProcessor 'com.github.reportportal:plugin-api:5.0.0-RC-5'
-        compile 'com.github.reportportal:commons-model:5.0.0-RC-5'
+        implementation 'com.github.reportportal:plugin-api:8fe626d'
+        annotationProcessor 'com.github.reportportal:plugin-api:8fe626d'
+//        compile 'com.github.reportportal:commons-model:5.0.0-RC-5'
     }
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
@@ -69,7 +68,7 @@ test {
 build.dependsOn jacocoTestReport
 
 wrapper {
-    gradleVersion = '5.4.1'
+    gradleVersion = '6.0'
 }
 
 jar {
