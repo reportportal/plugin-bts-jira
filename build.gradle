@@ -26,16 +26,16 @@ dependencyManagement {
     }
 }
 
-sourceCompatibility = JavaVersion.VERSION_1_8
-targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = JavaVersion.VERSION_11
+targetCompatibility = JavaVersion.VERSION_11
 
 dependencies {
     if (releaseMode) {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:plugin-api:8fe626d'
-        annotationProcessor 'com.github.reportportal:plugin-api:8fe626d'
+        implementation 'com.github.reportportal:plugin-api:57f9d86'
+        annotationProcessor 'com.github.reportportal:plugin-api:57f9d86'
     }
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
