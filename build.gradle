@@ -33,11 +33,9 @@ dependencies {
     if (releaseMode) {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
-        compile 'com.epam.reportportal:commons-model'
     } else {
         implementation 'com.github.reportportal:plugin-api:8fe626d'
         annotationProcessor 'com.github.reportportal:plugin-api:8fe626d'
-//        compile 'com.github.reportportal:commons-model:5.0.0-RC-5'
     }
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
