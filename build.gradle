@@ -10,9 +10,11 @@ project.ext {
     pluginsDir = "$buildDir/plugins"
 }
 
-def branch = releaseMode ? '5.1.0' : 'develop'
-apply from: "https://raw.githubusercontent.com/reportportal/gradle-scripts/$branch/build-quality.gradle"
-apply from: "https://raw.githubusercontent.com/reportportal/gradle-scripts/$branch/release-fat.gradle"
+def scriptsUrl = 'https://raw.githubusercontent.com/reportportal/gradle-scripts/' +
+        (releaseMode ? getProperty('scripts.version') : 'develop')
+
+apply from: scriptsUrl + '/release-fat.gradle'
+apply from: scriptsUrl + '/build-quality.gradle'
 
 repositories {
     mavenCentral()
@@ -22,7 +24,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:5.0.0' : 'com.github.reportportal:commons-bom:4b7ed8a')
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.github.reportportal:commons-bom:4b7ed8a')
     }
 }
 
