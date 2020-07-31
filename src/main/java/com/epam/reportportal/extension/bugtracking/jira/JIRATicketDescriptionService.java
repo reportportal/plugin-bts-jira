@@ -41,6 +41,7 @@ import org.slf4j.LoggerFactory;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.Collections;
 import java.util.List;
 
 import static com.epam.ta.reportportal.commons.EntityUtils.TO_DATE;
@@ -108,45 +109,52 @@ public class JIRATicketDescriptionService {
 			if (StringUtils.isNotBlank(ticketRQ.getBackLinks().get(backLinkId))) {
 				// If test-item contains any comments, then add it for JIRA
 				// comments section
-				ofNullable(item.getItemResults()).ifPresent(result -> ofNullable(result.getIssue()).ifPresent(issue -> {
+				ofNullable(item.getItemResults()).flatMap(result -> ofNullable(result.getIssue())).ifPresent(issue -> {
 					if (StringUtils.isNotBlank(issue.getIssueDescription())) {
 						descriptionBuilder.append(COMMENTS_HEADER).append("\n").append(issue.getIssueDescription()).append("\n");
 					}
-				}));
+				});
 			}
 		}
 		updateWithLogsInfo(descriptionBuilder, backLinkId, ticketRQ);
 	}
 
 	private StringBuilder updateWithLogsInfo(StringBuilder descriptionBuilder, Long backLinkId, PostTicketRQ ticketRQ) {
-		List<Log> logs = logRepository.findByTestItemId(backLinkId, ticketRQ.getNumberOfLogs());
-		if (CollectionUtils.isNotEmpty(logs) && (ticketRQ.getIsIncludeLogs() || ticketRQ.getIsIncludeScreenshots())) {
-			descriptionBuilder.append("h3.*Test execution log:*\n")
-					.append("{panel:title=Test execution log|borderStyle=solid|borderColor=#ccc|titleColor=#34302D|titleBGColor=#6DB33F}");
-			logs.forEach(log -> {
-				if (ticketRQ.getIsIncludeLogs()) {
-					descriptionBuilder.append(CODE).append(getFormattedMessage(log)).append(CODE);
-				}
+		itemRepository.findById(backLinkId).ifPresent(item -> ofNullable(item.getLaunchId()).ifPresent(launchId -> {
+			List<Log> logs = logRepository.findAllUnderTestItemByLaunchIdAndTestItemIdsWithLimit(launchId,
+					Collections.singletonList(item.getItemId()),
+					ticketRQ.getNumberOfLogs()
+			);
+			if (CollectionUtils.isNotEmpty(logs) && (ticketRQ.getIsIncludeLogs() || ticketRQ.getIsIncludeScreenshots())) {
+				descriptionBuilder.append("h3.*Test execution log:*\n")
+						.append("{panel:title=Test execution log|borderStyle=solid|borderColor=#ccc|titleColor=#34302D|titleBGColor=#6DB33F}");
+				logs.forEach(log -> updateWithLog(descriptionBuilder,
+						log,
+						ticketRQ.getIsIncludeLogs(),
+						ticketRQ.getIsIncludeScreenshots()
+				));
+				descriptionBuilder.append("{panel}\n");
+			}
+		}));
+		return descriptionBuilder;
+	}
 
-				if (ticketRQ.getIsIncludeScreenshots()) {
-					ofNullable(log.getAttachment()).ifPresent(attachment -> addAttachment(descriptionBuilder, attachment));
-				}
-
-			});
-			descriptionBuilder.append("{panel}\n");
+	private void updateWithLog(StringBuilder descriptionBuilder, Log log, boolean includeLog, boolean includeScreenshot) {
+		if (includeLog) {
+			descriptionBuilder.append(CODE).append(getFormattedMessage(log)).append(CODE);
 		}
 
-		return descriptionBuilder;
+		if (includeScreenshot) {
+			ofNullable(log.getAttachment()).ifPresent(attachment -> addAttachment(descriptionBuilder, attachment));
+		}
 	}
 
 	private String getFormattedMessage(Log log) {
 		StringBuilder messageBuilder = new StringBuilder();
-		if (log.getLogTime() != null) {
-			messageBuilder.append(" Time: ").append(dateFormat.format(TO_DATE.apply(log.getLogTime()))).append(", ");
-		}
-		if (log.getLogLevel() != null) {
-			messageBuilder.append("Level: ").append(log.getLogLevel()).append(", ");
-		}
+		ofNullable(log.getLogTime()).ifPresent(logTime -> messageBuilder.append(" Time: ")
+				.append(dateFormat.format(TO_DATE.apply(logTime)))
+				.append(", "));
+		ofNullable(log.getLogLevel()).ifPresent(logLevel -> messageBuilder.append("Level: ").append(logLevel).append(", "));
 		messageBuilder.append("Log: ").append(log.getLogMessage()).append("\n");
 		return messageBuilder.toString();
 	}

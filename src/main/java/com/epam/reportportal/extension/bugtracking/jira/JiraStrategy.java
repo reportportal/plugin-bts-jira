@@ -100,7 +100,8 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 	@Autowired
 	private TestItemRepository itemRepository;
 
-	private Supplier<JIRATicketDescriptionService> descriptionService = Suppliers.memoize(() -> new JIRATicketDescriptionService(logRepository,
+	private Supplier<JIRATicketDescriptionService> descriptionService = Suppliers.memoize(() -> new JIRATicketDescriptionService(
+			logRepository,
 			itemRepository
 	));
 
@@ -244,7 +245,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 				}
 			}
 			if (counter != 0) {
-				client.getIssueClient().addAttachments(issue.getAttachmentsUri(), Arrays.copyOf(attachmentInputs, counter));
+				client.getIssueClient().addAttachments(issue.getAttachmentsUri(), Arrays.copyOf(attachmentInputs, counter)).claim();
 			}
 			return getTicket(createdIssue.getKey(), details.getParams(), client).orElse(null);
 
@@ -293,7 +294,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 		String description = issueInput.getField(IssueFieldId.DESCRIPTION_FIELD.id).getValue().toString();
 		if (null != description) {
 			// !54086a2c3c0c7d4446beb3e6.jpg| or [^54086a2c3c0c7d4446beb3e6.xml]
-			String regex = "(!|\\[\\^)\\w+\\.\\w{0,5}(\\||\\])";
+			String regex = "(!|\\[\\^)\\w+\\.\\w{0,10}(\\||\\])";
 			Matcher matcher = Pattern.compile(regex).matcher(description);
 			while (matcher.find()) {
 				String rawValue = description.subSequence(matcher.start(), matcher.end()).toString();
