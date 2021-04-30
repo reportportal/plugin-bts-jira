@@ -5,6 +5,8 @@ plugins {
 }
 
 project.ext {
+    publishRepo = "https://maven.pkg.github.com/reportportal/plugin-bts-jira"
+    dependencyRepos = ["plugin-api", "commons-bom"]
     releaseMode = project.hasProperty("releaseMode")
     pluginID = "jira"
     pluginsDir = "$buildDir/plugins"
@@ -14,12 +16,25 @@ def scriptsUrl = 'https://raw.githubusercontent.com/reportportal/gradle-scripts/
         (releaseMode ? getProperty('scripts.version') : 'develop')
 
 apply from: scriptsUrl + '/release-fat.gradle'
+apply from: scriptsUrl + '/signing.gradle'
 apply from: scriptsUrl + '/build-quality.gradle'
 
 repositories {
     mavenCentral()
     maven { url "https://m2proxy.atlassian.com/repository/public" }
-    releaseMode ? maven { url "http://dl.bintray.com/epam/reportportal" } : maven { url 'https://jitpack.io' }
+    if (releaseMode) {
+        dependencyRepos.forEach { path ->
+            maven {
+                setUrl("https://maven.pkg.github.com/reportportal/${path}")
+                credentials {
+                    username = findProperty("githubUserName")
+                    password = findProperty("githubToken")
+                }
+            }
+        }
+    } else {
+        maven { url 'https://jitpack.io' }
+    }
 }
 
 dependencyManagement {
@@ -44,7 +59,7 @@ dependencies {
     compile 'org.slf4j:slf4j-api:1.7.25'
 
     compile 'io.atlassian.fugue:fugue:4.7.2'
-    compile('com.atlassian.jira:jira-rest-java-client-core:5.1.6')
+    compile('com.atlassian.jira:jira-rest-java-client-core:5.2.1')
 
     compile 'net.oauth.core:oauth:20090617'
     compile 'net.oauth.core:oauth-httpclient4:20090913'
