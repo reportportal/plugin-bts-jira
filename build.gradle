@@ -86,6 +86,8 @@ wrapper {
     gradleVersion = '6.0'
 }
 
+generatePomFileForShadowPublication { pom.packaging = "jar" }
+
 jar {
     manifest {
         attributes(
