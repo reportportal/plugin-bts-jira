@@ -29,6 +29,7 @@ import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
 import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
 import com.atlassian.jira.rest.client.auth.BasicHttpAuthenticationHandler;
 import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
+import com.epam.reportportal.extension.CommonPluginCommand;
 import com.epam.reportportal.extension.IntegrationGroupEnum;
 import com.epam.reportportal.extension.PluginCommand;
 import com.epam.reportportal.extension.ReportPortalExtensionPoint;
@@ -111,8 +112,13 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 	}
 
 	@Override
-	public PluginCommand getCommandToExecute(String commandName) {
-		return null;
+	public CommonPluginCommand getCommonCommand(String commandName) {
+		throw new UnsupportedOperationException();
+	}
+
+	@Override
+	public PluginCommand getIntegrationCommand(String commandName) {
+		throw new UnsupportedOperationException();
 	}
 
 	@Override
