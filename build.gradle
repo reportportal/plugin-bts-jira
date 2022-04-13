@@ -51,8 +51,8 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:plugin-api:574b261'
-        annotationProcessor 'com.github.reportportal:plugin-api:574b261'
+        implementation 'com.github.reportportal:plugin-api:886ac55'
+        annotationProcessor 'com.github.reportportal:plugin-api:886ac55'
     }
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
