@@ -103,7 +103,7 @@ jar {
 }
 
 shadowJar {
-    configurations = [project.configurations.runtime]
+    configurations = [project.configurations.compile]
     zip64 true
     dependencies {
         exclude(dependency('com.github.reportportal:'))
