@@ -12,9 +12,6 @@ on:
       bom_version:
         description: 'Commons bom version'
         required: true
-      migrations_version:
-        description: 'Db migrations version'
-        required: true
 
 env:
   GH_USER_NAME: github.actor
