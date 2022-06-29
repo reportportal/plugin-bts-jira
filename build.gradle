@@ -136,3 +136,4 @@ task assemblePlugin(type: Copy) {
 task assemblePlugins(type: Copy) {
     dependsOn subprojects.assemblePlugin
 }
+
