@@ -200,7 +200,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 		);
 		final String issueTypeStr = issueType.getValue().get(0);
 
-		try (JiraRestClient client = getClient(details.getParams(), ticketRQ)) {
+		try (JiraRestClient client = getClient(details.getParams())) {
 			Project jiraProject = getProject(client, details);
 
 			if (null != components.getValue()) {
@@ -486,19 +486,6 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 		return new AsynchronousJiraRestClientFactory().create(URI.create(url),
 				new BasicHttpAuthenticationHandler(username, simpleEncryptor.decrypt(password))
 		);
-	}
-
-	public JiraRestClient getClient(IntegrationParams params, PostTicketRQ postTicketRQ) {
-		String url = JiraProps.URL.getParam(params)
-				.orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
-		String username = ofNullable(postTicketRQ.getUsername()).orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
-				"Username is not specified."
-		));
-		String password = ofNullable(postTicketRQ.getPassword()).orElseThrow(() -> new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
-				"Password is not specified."
-		));
-
-		return new AsynchronousJiraRestClientFactory().create(URI.create(url), new BasicHttpAuthenticationHandler(username, password));
 	}
 
 }
