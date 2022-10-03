@@ -107,6 +107,7 @@ jar {
 }
 
 shadowJar {
+    archiveClassifier.set(null)
     configurations = [project.configurations.compile]
     zip64 true
     dependencies {
