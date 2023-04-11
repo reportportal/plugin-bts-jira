@@ -200,7 +200,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 		);
 		final String issueTypeStr = issueType.getValue().get(0);
 
-		try (JiraRestClient client = getClient(details.getParams(), ticketRQ)) {
+		try (JiraRestClient client = getClient(details.getParams())) {
 			Project jiraProject = getProject(client, details);
 
 			if (null != components.getValue()) {
