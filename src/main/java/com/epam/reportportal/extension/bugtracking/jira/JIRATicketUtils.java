@@ -21,8 +21,6 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import com.atlassian.jira.rest.client.api.GetCreateIssueMetadataOptions;
-import com.atlassian.jira.rest.client.api.GetCreateIssueMetadataOptionsBuilder;
 import com.atlassian.jira.rest.client.api.JiraRestClient;
 import com.atlassian.jira.rest.client.api.domain.*;
 import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
@@ -37,6 +35,7 @@ import com.epam.ta.reportportal.ws.model.externalsystem.PostTicketRQ;
 import com.epam.ta.reportportal.ws.model.externalsystem.Ticket;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Streams;
 import org.apache.commons.collections.CollectionUtils;
 import org.joda.time.format.DateTimeFormatter;
 import org.joda.time.format.ISODateTimeFormat;
@@ -44,10 +43,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -81,17 +78,16 @@ public class JIRATicketUtils {
 			JIRATicketDescriptionService descriptionService) {
 		String userDefinedDescription = "";
 		IssueInputBuilder issueInputBuilder = new IssueInputBuilder(jiraProject, issueType.get());
-		GetCreateIssueMetadataOptions options = new GetCreateIssueMetadataOptionsBuilder().withExpandedIssueTypesFields()
-				.withProjectKeys(jiraProject.getKey())
-				.build();
-		Iterator<CimProject> projects = client.getIssueClient().getCreateIssueMetadata(options).claim().iterator();
-		BusinessRule.expect(projects.hasNext(), Predicates.equalTo(true))
-				.verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, String.format("Project %s not found", jiraProject.getKey()));
-		CimProject project = projects.next();
-		CimIssueType cimIssueType = EntityHelper.findEntityById(project.getIssueTypes(), issueType.get().getId());
+		Page<CimFieldInfo> fieldsInfoPage = client.getIssueClient()
+				.getCreateIssueMetaFields(jiraProject.getKey(), issueType.get().getId().toString(), null, null)
+				.claim();
+		BusinessRule.expect(fieldsInfoPage.getValues().iterator().hasNext(), Predicates.equalTo(true))
+				.verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, String.format("Issue fields %s not found", issueType.get().getId().toString()));
+		Map<String, CimFieldInfo> fieldsInfo = Streams.stream(fieldsInfoPage.getValues())
+				.collect(Collectors.toMap(CimFieldInfo::getId, Function.identity()));
 		List<PostFormField> fields = ticketRQ.getFields();
 		for (PostFormField one : fields) {
-			CimFieldInfo cimFieldInfo = cimIssueType.getFields().get(one.getId());
+			CimFieldInfo cimFieldInfo = fieldsInfo.get(one.getId());
 			if (one.getIsRequired() && CollectionUtils.isEmpty(one.getValue())) {
 				BusinessRule.fail().withError(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
 						Suppliers.formattedSupplier("Required parameter '{}' is empty", one.getFieldName())
