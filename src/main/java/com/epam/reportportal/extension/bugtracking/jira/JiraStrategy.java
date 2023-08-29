@@ -86,6 +86,9 @@ import static java.util.stream.Collectors.toSet;
 @Component
 public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
+	private static final String DOCUMENTATION_LINK_FIELD = "documentationLink";
+	private static final String DOCUMENTATION_LINK = "https://reportportal.io/docs/plugins/JiraServer";
+
 	private static final Logger LOGGER = LoggerFactory.getLogger(JiraStrategy.class);
 
 	@Autowired
@@ -108,7 +111,9 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
 	@Override
 	public Map<String, ?> getPluginParams() {
-		return Collections.emptyMap();
+		Map<String, Object> params = new HashMap<>();
+		params.put(DOCUMENTATION_LINK_FIELD, DOCUMENTATION_LINK);
+		return params;
 	}
 
 	@Override
