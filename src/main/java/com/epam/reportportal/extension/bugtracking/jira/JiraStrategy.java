@@ -87,7 +87,7 @@ import static java.util.stream.Collectors.toSet;
 public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
 	private static final String DOCUMENTATION_LINK_FIELD = "documentationLink";
-	private static final String DOCUMENTATION_LINK = "https://reportportal.io/docs/plugins/JiraServer";
+	private static final String DOCUMENTATION_LINK = "https://reportportal.io/docs/plugins/AtlassianJiraServer";
 
 	private static final Logger LOGGER = LoggerFactory.getLogger(JiraStrategy.class);
 
