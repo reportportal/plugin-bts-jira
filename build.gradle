@@ -22,24 +22,16 @@ apply from: scriptsUrl + '/build-quality.gradle'
 repositories {
     mavenCentral()
     maven { url "https://m2proxy.atlassian.com/repository/public" }
-    if (releaseMode) {
-        dependencyRepos.forEach { path ->
-            maven {
-                setUrl("https://maven.pkg.github.com/reportportal/${path}")
-                credentials {
-                    username = findProperty("githubUserName")
-                    password = findProperty("githubToken")
-                }
-            }
-        }
-    } else {
+    mavenCentral { url "https://repo1.maven.org/maven2" }
+
+    if (!releaseMode) {
         maven { url 'https://jitpack.io' }
     }
 }
 
 dependencyManagement {
     imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.github.reportportal:commons-bom:4b7ed8a')
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.11.0')
     }
 }
 
@@ -51,8 +43,8 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:plugin-api:886ac55'
-        annotationProcessor 'com.github.reportportal:plugin-api:886ac55'
+        implementation 'com.epam.reportportal:plugin-api'
+        annotationProcessor 'com.epam.reportportal:plugin-api'
     }
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
