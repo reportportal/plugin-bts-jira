@@ -218,7 +218,8 @@ public class JIRATicketUtils {
 	 */
 	public enum IssueFieldType {
 		//@formatter:off
-		ARRAY("array"), 
+		ARRAY("array"),
+		ANY("any"),
 		DATE("date"), 
 		NUMBER("number"), 
 		USER("user"),
