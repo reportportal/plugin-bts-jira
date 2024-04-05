@@ -21,9 +21,9 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
+import com.epam.reportportal.model.externalsystem.PostTicketRQ;
 import com.epam.ta.reportportal.dao.LogRepository;
 import com.epam.ta.reportportal.dao.TestItemRepository;
-import com.epam.ta.reportportal.ws.model.externalsystem.PostTicketRQ;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
