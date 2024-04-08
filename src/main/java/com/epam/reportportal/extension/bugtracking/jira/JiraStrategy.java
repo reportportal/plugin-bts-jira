@@ -21,14 +21,14 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
+import static com.epam.reportportal.rules.commons.validation.BusinessRule.expect;
+import static com.epam.reportportal.rules.commons.validation.Suppliers.formattedSupplier;
+import static com.epam.reportportal.rules.exception.ErrorType.UNABLE_INTERACT_WITH_INTEGRATION;
 import static com.epam.ta.reportportal.commons.Predicates.equalTo;
 import static com.epam.ta.reportportal.commons.Predicates.in;
 import static com.epam.ta.reportportal.commons.Predicates.isNull;
 import static com.epam.ta.reportportal.commons.Predicates.isPresent;
 import static com.epam.ta.reportportal.commons.Predicates.not;
-import static com.epam.ta.reportportal.commons.validation.BusinessRule.expect;
-import static com.epam.ta.reportportal.commons.validation.Suppliers.formattedSupplier;
-import static com.epam.ta.reportportal.ws.reporting.ErrorType.UNABLE_INTERACT_WITH_INTEGRATION;
 import static java.util.Optional.ofNullable;
 import static java.util.stream.Collectors.toSet;
 
@@ -59,20 +59,20 @@ import com.epam.reportportal.extension.PluginCommand;
 import com.epam.reportportal.extension.ReportPortalExtensionPoint;
 import com.epam.reportportal.extension.bugtracking.BtsExtension;
 import com.epam.reportportal.extension.bugtracking.jira.atlassian.AsynchronousJiraRestClientExtended;
+import com.epam.reportportal.model.externalsystem.AllowedValue;
+import com.epam.reportportal.model.externalsystem.PostFormField;
+import com.epam.reportportal.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.model.externalsystem.Ticket;
+import com.epam.reportportal.rules.commons.validation.BusinessRule;
+import com.epam.reportportal.rules.exception.ErrorType;
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.binary.DataStoreService;
 import com.epam.ta.reportportal.commons.Preconditions;
-import com.epam.ta.reportportal.commons.validation.BusinessRule;
 import com.epam.ta.reportportal.dao.LogRepository;
 import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.enums.AuthType;
 import com.epam.ta.reportportal.entity.integration.Integration;
 import com.epam.ta.reportportal.entity.integration.IntegrationParams;
-import com.epam.ta.reportportal.exception.ReportPortalException;
-import com.epam.ta.reportportal.ws.model.externalsystem.AllowedValue;
-import com.epam.ta.reportportal.ws.model.externalsystem.PostFormField;
-import com.epam.ta.reportportal.ws.model.externalsystem.PostTicketRQ;
-import com.epam.ta.reportportal.ws.model.externalsystem.Ticket;
-import com.epam.ta.reportportal.ws.reporting.ErrorType;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.io.InputStream;
@@ -359,7 +359,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
           StreamSupport.stream(jiraProject.getIssueTypes().spliterator(), false)
               .filter(input -> ticketType.equalsIgnoreCase(input.getName())).findFirst();
 
-      BusinessRule.expect(issueType, Preconditions.IS_PRESENT)
+      expect(issueType, Preconditions.IS_PRESENT)
           .verify(UNABLE_INTERACT_WITH_INTEGRATION, "Ticket type '" + ticketType + "' not found");
 
       Page<CimFieldInfo> fields = client.getIssueClient()

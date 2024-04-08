@@ -24,14 +24,14 @@ package com.epam.reportportal.extension.bugtracking.jira;
 import static com.epam.ta.reportportal.commons.EntityUtils.INSTANT_TO_LDT;
 import static java.util.Optional.ofNullable;
 
+import com.epam.reportportal.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.rules.exception.ErrorType;
+import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.dao.LogRepository;
 import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.attachment.Attachment;
 import com.epam.ta.reportportal.entity.item.TestItem;
 import com.epam.ta.reportportal.entity.log.Log;
-import com.epam.ta.reportportal.exception.ReportPortalException;
-import com.epam.ta.reportportal.ws.model.externalsystem.PostTicketRQ;
-import com.epam.ta.reportportal.ws.reporting.ErrorType;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Collections;
