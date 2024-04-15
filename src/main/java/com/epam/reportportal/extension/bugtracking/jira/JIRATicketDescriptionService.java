@@ -21,7 +21,7 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import static com.epam.ta.reportportal.commons.EntityUtils.TO_DATE;
+import static com.epam.ta.reportportal.commons.EntityUtils.INSTANT_TO_LDT;
 import static java.util.Optional.ofNullable;
 
 import com.epam.reportportal.model.externalsystem.PostTicketRQ;
@@ -32,8 +32,8 @@ import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.attachment.Attachment;
 import com.epam.ta.reportportal.entity.item.TestItem;
 import com.epam.ta.reportportal.entity.log.Log;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
 import org.apache.commons.collections.CollectionUtils;
@@ -64,12 +64,12 @@ public class JIRATicketDescriptionService {
 
   private final LogRepository logRepository;
   private final TestItemRepository itemRepository;
-  private final DateFormat dateFormat;
+  private static final DateTimeFormatter JIRA_DATETIME_FORMATTER =
+      DateTimeFormatter.ofPattern("MM/dd/yyyy HH:mm:ss").withZone(ZoneId.of("UTC"));
   private final MimeTypes mimeRepository;
 
   public JIRATicketDescriptionService(LogRepository logRepository,
       TestItemRepository itemRepository) {
-    this.dateFormat = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
     this.logRepository = logRepository;
     this.itemRepository = itemRepository;
     this.mimeRepository = TikaConfig.getDefaultConfig().getMimeRepository();
@@ -156,8 +156,10 @@ public class JIRATicketDescriptionService {
 
   private String getFormattedMessage(Log log) {
     StringBuilder messageBuilder = new StringBuilder();
-    ofNullable(log.getLogTime()).ifPresent(logTime -> messageBuilder.append(" Time: ")
-        .append(dateFormat.format(TO_DATE.apply(logTime))).append(", "));
+    ofNullable(log.getLogTime())
+        .ifPresent(logTime -> messageBuilder.append(" Time: ")
+            .append(INSTANT_TO_LDT.apply(logTime).format(JIRA_DATETIME_FORMATTER))
+            .append(", "));
     ofNullable(log.getLogLevel()).ifPresent(
         logLevel -> messageBuilder.append("Level: ").append(logLevel).append(", "));
     messageBuilder.append("Log: ").append(log.getLogMessage()).append("\n");
