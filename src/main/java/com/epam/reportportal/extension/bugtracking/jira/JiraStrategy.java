@@ -63,7 +63,6 @@ import com.epam.reportportal.model.externalsystem.AllowedValue;
 import com.epam.reportportal.model.externalsystem.PostFormField;
 import com.epam.reportportal.model.externalsystem.PostTicketRQ;
 import com.epam.reportportal.model.externalsystem.Ticket;
-import com.epam.reportportal.rules.commons.validation.BusinessRule;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.binary.DataStoreService;

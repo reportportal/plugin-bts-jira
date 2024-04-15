@@ -43,16 +43,17 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:a0f2b0e'
-        implementation 'com.github.reportportal:plugin-api:4c94ca4'
-        annotationProcessor 'com.github.reportportal:plugin-api:4c94ca4'
+        implementation 'com.github.reportportal:commons-dao:0703b75'
+        implementation 'com.github.reportportal:plugin-api:3ecb915657'
+        annotationProcessor 'com.github.reportportal:plugin-api:3ecb915657'
     }
+    implementation 'org.hibernate:hibernate-core:5.6.15.Final'
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'org.slf4j:slf4j-api:1.7.25'
 
     compile 'io.atlassian.fugue:fugue:4.7.2'
-    compile('com.atlassian.jira:jira-rest-java-client-core:5.2.4')
+    compile 'com.atlassian.jira:jira-rest-java-client-core:5.2.4'
 
     compile 'net.oauth.core:oauth:20090617'
     compile 'net.oauth.core:oauth-httpclient4:20090913'
