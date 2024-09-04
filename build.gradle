@@ -30,7 +30,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.11.2')
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.12.1')
     }
 }
 
@@ -43,9 +43,9 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:2834dd5'
-        implementation 'com.github.reportportal:plugin-api:6465099'
-        annotationProcessor 'com.github.reportportal:plugin-api:6465099'
+        implementation 'com.github.reportportal:commons-dao:acf1ec7'
+        implementation 'com.github.reportportal:plugin-api:188792e'
+        annotationProcessor 'com.github.reportportal:plugin-api:188792e'
     }
     implementation 'org.hibernate:hibernate-core:5.6.15.Final'
 
