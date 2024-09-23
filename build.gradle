@@ -30,7 +30,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.11.2')
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.12.1')
     }
 }
 
@@ -39,18 +39,21 @@ targetCompatibility = JavaVersion.VERSION_11
 
 dependencies {
     if (releaseMode) {
+        implementation 'com.epam.reportportal:commons-dao'
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.epam.reportportal:plugin-api'
-        annotationProcessor 'com.epam.reportportal:plugin-api'
+        implementation 'com.github.reportportal:commons-dao:acf1ec7'
+        implementation 'com.github.reportportal:plugin-api:188792e'
+        annotationProcessor 'com.github.reportportal:plugin-api:188792e'
     }
+    implementation 'org.hibernate:hibernate-core:5.6.15.Final'
 
     compile 'ch.qos.logback:logback-classic:1.2.3'
     compile 'org.slf4j:slf4j-api:1.7.25'
 
     compile 'io.atlassian.fugue:fugue:4.7.2'
-    compile('com.atlassian.jira:jira-rest-java-client-core:5.2.4')
+    compile 'com.atlassian.jira:jira-rest-java-client-core:5.2.4'
 
     compile 'net.oauth.core:oauth:20090617'
     compile 'net.oauth.core:oauth-httpclient4:20090913'
