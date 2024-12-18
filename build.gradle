@@ -29,7 +29,7 @@ repositories {
 
 dependencyManagement {
     imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.12.0')
+        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.13.0')
     }
 }
 
@@ -44,7 +44,7 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:527168b'
+        implementation 'com.github.reportportal:commons-dao:8dcc514'
         implementation 'com.github.reportportal:plugin-api:815c74a'
         annotationProcessor 'com.github.reportportal:plugin-api:815c74a'
     }
@@ -106,14 +106,29 @@ shadowJar {
     configurations = [project.configurations.compileClasspath]
     zip64 true
     dependencies {
-        exclude(dependency('com.github.reportportal:'))
-        exclude(dependency('com.epam.reportportal:'))
-        exclude(dependency('org.springframework:'))
-        exclude(dependency('org.springframework.security:'))
-        exclude(dependency('org.springframework.data:'))
-        exclude(dependency('org.springframework.boot:'))
-        exclude(dependency('ch.qos.logback:'))
-        exclude(dependency('org.slf4j:'))
+        include(dependency("com.atlassian.jira:jira-rest-java-client-api:.*"))
+        include(dependency("com.atlassian.jira:jira-rest-java-client-core:.*"))
+        include(dependency("com.atlassian.httpclient:atlassian-httpclient-api:.*"))
+        include(dependency("com.atlassian.httpclient:atlassian-httpclient-library:.*"))
+        include(dependency("com.atlassian.sal:sal-api:.*"))
+        include(dependency("com.atlassian.event:atlassian-event:.*"))
+        include(dependency("io.atlassian.util.concurrent:atlassian-util-concurrent:.*"))
+        include(dependency("io.atlassian.fugue:fugue:.*"))
+        include(dependency("org.apache.httpcomponents:httpasyncclient:.*"))
+        include(dependency("org.apache.httpcomponents:httpasyncclient-cache:.*"))
+        include(dependency("org.apache.httpcomponents:httpclient:.*"))
+        include(dependency("org.apache.httpcomponents:httpclient-cache:.*"))
+        include(dependency("org.apache.httpcomponents:httpcore:.*"))
+        include(dependency("org.apache.httpcomponents:httpcore-nio:.*"))
+        include(dependency("org.apache.httpcomponents:httpcore-mime:.*"))
+        include(dependency("org.glassfish.jersey.core:jersey-server:.*"))
+        include(dependency("org.glassfish.jersey.core:jersey-common:.*"))
+        include(dependency("jakarta.ws.rs:jakarta.ws.rs-api:.*"))
+        //include(dependency("jakarta.annotation:jakarta.annotation-api:.*"))
+        include(dependency("org.apache.tomcat:tomcat-annotations-api:.*"))
+        include(dependency("org.glassfish.hk2.external:jakarta.inject:.*"))
+        include(dependency("org.glassfish.hk2:osgi-resource-locator:.*"))
+        include(dependency("org.glassfish.jaxb:jaxb-runtime:.*"))
     }
 }
 

@@ -11,8 +11,8 @@ on:
 
 env:
   GH_USER_NAME: github.actor
-  SCRIPTS_VERSION: 5.10.0
-  BOM_VERSION: 5.11.2
+  SCRIPTS_VERSION: 5.12.1
+  BOM_VERSION: 5.13.0
   REPOSITORY_URL: 'https://maven.pkg.github.com/'
 
 jobs:
