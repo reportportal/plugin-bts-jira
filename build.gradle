@@ -124,6 +124,7 @@ shadowJar {
         include(dependency("org.glassfish.jersey.core:jersey-common:.*"))
         include(dependency("jakarta.ws.rs:jakarta.ws.rs-api:.*"))
         //include(dependency("jakarta.annotation:jakarta.annotation-api:.*"))
+        include(dependency("org.apache.httpcomponents:httpmime:.*"))
         include(dependency("org.apache.tomcat:tomcat-annotations-api:.*"))
         include(dependency("org.glassfish.hk2.external:jakarta.inject:.*"))
         include(dependency("org.glassfish.hk2:osgi-resource-locator:.*"))
