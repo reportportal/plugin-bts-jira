@@ -21,6 +21,11 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
+import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.AFFECTS_VERSIONS_FIELD;
+import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.ASSIGNEE_FIELD;
+import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.COMPONENTS_FIELD;
+import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.FIX_VERSIONS_FIELD;
+import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.PRIORITY_FIELD;
 import static com.epam.reportportal.rules.commons.validation.BusinessRule.expect;
 import static com.epam.reportportal.rules.commons.validation.Suppliers.formattedSupplier;
 import static com.epam.reportportal.rules.exception.ErrorType.UNABLE_INTERACT_WITH_INTEGRATION;
@@ -30,35 +35,25 @@ import static com.epam.ta.reportportal.commons.Predicates.isNull;
 import static com.epam.ta.reportportal.commons.Predicates.isPresent;
 import static com.epam.ta.reportportal.commons.Predicates.not;
 import static java.util.Optional.ofNullable;
-import static java.util.stream.Collectors.toSet;
 
-import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.BasicComponent;
-import com.atlassian.jira.rest.client.api.domain.BasicIssue;
-import com.atlassian.jira.rest.client.api.domain.BasicPriority;
-import com.atlassian.jira.rest.client.api.domain.BasicProjectRole;
-import com.atlassian.jira.rest.client.api.domain.CimFieldInfo;
-import com.atlassian.jira.rest.client.api.domain.CustomFieldOption;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
-import com.atlassian.jira.rest.client.api.domain.IssueType;
-import com.atlassian.jira.rest.client.api.domain.Page;
-import com.atlassian.jira.rest.client.api.domain.Project;
-import com.atlassian.jira.rest.client.api.domain.ProjectRole;
-import com.atlassian.jira.rest.client.api.domain.SearchResult;
-import com.atlassian.jira.rest.client.api.domain.Version;
-import com.atlassian.jira.rest.client.api.domain.input.AttachmentInput;
-import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
-import com.atlassian.jira.rest.client.auth.BasicHttpAuthenticationHandler;
-import com.atlassian.jira.rest.client.internal.async.AsynchronousHttpClientFactory;
-import com.atlassian.jira.rest.client.internal.async.AsynchronousJiraRestClientFactory;
-import com.atlassian.jira.rest.client.internal.async.DisposableHttpClient;
 import com.epam.reportportal.extension.CommonPluginCommand;
 import com.epam.reportportal.extension.IntegrationGroupEnum;
 import com.epam.reportportal.extension.PluginCommand;
 import com.epam.reportportal.extension.ReportPortalExtensionPoint;
 import com.epam.reportportal.extension.bugtracking.BtsExtension;
-import com.epam.reportportal.extension.bugtracking.jira.atlassian.AsynchronousJiraRestClientExtended;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.CreatedIssue;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueCreateMetadata;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeDetails;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeIssueCreateMetadata;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.ProjectComponent;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.ProjectIssueCreateMetadata;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.SearchResults;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.Version;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
+import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
 import com.epam.reportportal.model.externalsystem.AllowedValue;
 import com.epam.reportportal.model.externalsystem.PostFormField;
 import com.epam.reportportal.model.externalsystem.PostTicketRQ;
@@ -66,28 +61,34 @@ import com.epam.reportportal.model.externalsystem.Ticket;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.reportportal.rules.exception.ReportPortalException;
 import com.epam.ta.reportportal.binary.DataStoreService;
-import com.epam.ta.reportportal.commons.Preconditions;
 import com.epam.ta.reportportal.dao.LogRepository;
 import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.enums.AuthType;
 import com.epam.ta.reportportal.entity.integration.Integration;
 import com.epam.ta.reportportal.entity.integration.IntegrationParams;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.io.InputStream;
-import java.net.URI;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
+import lombok.SneakyThrows;
+import org.apache.commons.codec.binary.Base64;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpResponse;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
@@ -95,6 +96,8 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
+import org.springframework.util.Assert;
+import org.springframework.web.client.RestClientException;
 
 /**
  * JIRA related implementation of {@link BtsExtension}.
@@ -154,29 +157,30 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
   @Override
   public boolean testConnection(Integration system) {
-    IntegrationParams params = ofNullable(system.getParams()).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Integration params are not specified."
-        ));
+    try {
+      IntegrationParams params = ofNullable(system.getParams()).orElseThrow(
+          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
+              "Integration params are not specified."
+          ));
 
-    String url = JiraProps.URL.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
-    String username = JiraProps.USER_NAME.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Username is not specified."
-        ));
-    String password = JiraProps.PASSWORD.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Password is not specified."
-        ));
-    String project = JiraProps.PROJECT.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Project is not specified."
-        ));
+      String url = JiraProps.URL.getParam(params).orElseThrow(
+          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
+      String username = JiraProps.USER_NAME.getParam(params).orElseThrow(
+          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
+              "Username is not specified."
+          ));
+      String password = JiraProps.PASSWORD.getParam(params).orElseThrow(
+          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
+              "Password is not specified."
+          ));
+      String projectKey = JiraProps.PROJECT.getParam(params).orElseThrow(
+          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
+              "Project is not specified."
+          ));
 
-    validateExternalSystemDetails(system);
-    try (JiraRestClient restClient = getClient(url, username, simpleEncryptor.decrypt(password))) {
-      return restClient.getProjectClient().getProject(project).claim() != null;
+      validateExternalSystemDetails(system);
+      var client = new JiraRestClient(url, username, simpleEncryptor.decrypt(password));
+      return client.projectsApi().getProject(projectKey, null, null) != null;
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
       return false;
@@ -185,24 +189,22 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
   @Override
   //    @Cacheable(value = CacheConfiguration.EXTERNAL_SYSTEM_TICKET_CACHE, key = "#system.url + #system.project + #id")
-  public Optional<Ticket> getTicket(final String id, Integration system) {
-    try (JiraRestClient client = getClient(system.getParams())) {
-      return getTicket(id, system.getParams(), client);
+  public Optional<Ticket> getTicket(final String id, Integration integration) {
+    try {
+      var client = getClient(integration.getParams());
+      return getTicket(id, integration.getParams(), client);
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
       return Optional.empty();
     }
   }
 
-  private Optional<Ticket> getTicket(String id, IntegrationParams details,
-      JiraRestClient jiraRestClient) {
-    SearchResult issues = findIssue(id, jiraRestClient);
+  private Optional<Ticket> getTicket(String id, IntegrationParams details, JiraRestClient jiraRestClient) {
+    SearchResults issues = findIssue(id, jiraRestClient);
     if (issues.getTotal() > 0) {
-      Issue issue = jiraRestClient.getIssueClient().getIssue(id).claim();
+      IssueBean issue = jiraRestClient.issuesApi().getIssue(id, null, null, null, null, null, null);
       return Optional.of(JIRATicketUtils.toTicket(issue, JiraProps.URL.getParam(details)
-          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-              "Url is not specified."
-          ))));
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."))));
     } else {
       return Optional.empty();
     }
@@ -210,8 +212,9 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
   @Override
   public Ticket submitTicket(final PostTicketRQ ticketRQ, Integration details) {
-    expect(ticketRQ.getFields(), not(isNull())).verify(
-        UNABLE_INTERACT_WITH_INTEGRATION, "External System fields set is empty!");
+
+    expect(ticketRQ.getFields(), not(isNull()))
+        .verify(UNABLE_INTERACT_WITH_INTEGRATION, "External System fields set is empty!");
     List<PostFormField> fields = ticketRQ.getFields();
 
     // TODO add validation of any field with allowedValues() array
@@ -234,14 +237,13 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
         )
     );
     final String issueTypeStr = issueType.getValue().get(0);
-
-    try (JiraRestClient client = getClient(details.getParams())) {
+    try {
+      JiraRestClient client = getClient(details.getParams());
       Project jiraProject = getProject(client, details);
 
       if (null != components.getValue()) {
-        Set<String> validComponents =
-            StreamSupport.stream(jiraProject.getComponents().spliterator(), false)
-                .map(JiraPredicates.COMPONENT_NAMES).collect(toSet());
+        List<ProjectComponent> validComponents = jiraProject.getComponents();
+
         validComponents.forEach(component -> expect(component, in(validComponents)).verify(
             UNABLE_INTERACT_WITH_INTEGRATION,
             formattedSupplier("Component '{}' not exists in the external system", component)
@@ -249,46 +251,32 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
       }
 
       // TODO consider to modify code below - project cached
-      Optional<IssueType> issueTypeOptional =
-          StreamSupport.stream(jiraProject.getIssueTypes().spliterator(), false)
-              .filter(input -> issueTypeStr.equalsIgnoreCase(input.getName())).findFirst();
+      IssueTypeDetails projectIssueType = jiraProject.getIssueTypes().stream()
+          .filter(input -> issueTypeStr.equalsIgnoreCase(input.getName()))
+          .findFirst()
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
+              formattedSupplier("Unable post issue with type '{}' for project '{}'.", issueTypeStr, details.getProject())));
 
-      expect(issueTypeOptional, Preconditions.IS_PRESENT).verify(UNABLE_INTERACT_WITH_INTEGRATION,
-          formattedSupplier("Unable post issue with type '{}' for project '{}'.",
-              issueType.getValue().get(0), details.getProject()
-          )
-      );
-      IssueInput issueInput =
-          JIRATicketUtils.toIssueInput(client, jiraProject, issueTypeOptional, ticketRQ,
-              descriptionService.get()
-          );
+      IssueUpdateDetails issueRequest = JIRATicketUtils.toIssueInput(client, jiraProject, projectIssueType, ticketRQ, descriptionService.get());
 
-      Map<String, String> binaryData = findBinaryData(issueInput);
+      Map<String, String> binaryData = findBinaryData(issueRequest);
 
       /*
-       * Claim because we wanna be sure everything is OK
+       * Claim because we want to be sure everything is OK
        */
-      BasicIssue createdIssue = client.getIssueClient().createIssue(issueInput).claim();
+      CreatedIssue createdIssue = client.issuesApi().createIssue(issueRequest, false);
+      String issueKey = createdIssue.getKey();
 
       // post binary data
-      Issue issue = client.getIssueClient().getIssue(createdIssue.getKey()).claim();
-
-      AttachmentInput[] attachmentInputs = new AttachmentInput[binaryData.size()];
-      int counter = 0;
       for (Map.Entry<String, String> binaryDataEntry : binaryData.entrySet()) {
-
         Optional<InputStream> data = dataStoreService.load(binaryDataEntry.getKey());
         if (data.isPresent()) {
-          attachmentInputs[counter] = new AttachmentInput(binaryDataEntry.getValue(), data.get());
-          counter++;
+          addAttachment(issueKey, details, data.get());
         }
       }
-      if (counter != 0) {
-        client.getIssueClient()
-            .addAttachments(issue.getAttachmentsUri(), Arrays.copyOf(attachmentInputs, counter))
-            .claim();
-      }
-      return getTicket(createdIssue.getKey(), details.getParams(), client).orElse(null);
+
+      return getTicket(issueKey, details.getParams(), client)
+          .orElse(null);
 
     } catch (ReportPortalException e) {
       throw e;
@@ -305,22 +293,18 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
    * @param system         Integration system
    * @return Jira Project
    */
-  // paced in separate method because result object should be cached
-  // TODO consider avoiding this method
-  //    @Cacheable(value = CacheConfiguration.JIRA_PROJECT_CACHE, key = "#details")
   private Project getProject(JiraRestClient jiraRestClient, Integration system) {
     IntegrationParams params = ofNullable(system.getParams()).orElseThrow(
         () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
             "Integration params are not specified."
         ));
-    return jiraRestClient.getProjectClient().getProject(JiraProps.PROJECT.getParam(params)
-        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Project is not specified."
-        ))).claim();
+    String projectKey = JiraProps.PROJECT.getParam(params)
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Project is not specified."));
+    return jiraRestClient.projectsApi().getProject(projectKey, null, null);
   }
 
-  private SearchResult findIssue(String id, JiraRestClient jiraRestClient) {
-    return jiraRestClient.getSearchClient().searchJql("issue = " + id).claim();
+  private SearchResults findIssue(String id, JiraRestClient jiraRestClient) {
+    return jiraRestClient.issueSearchApi().searchForIssuesUsingJql("issue = " + id, null, 50, "", null, null, null, false, false);
   }
 
   /**
@@ -329,11 +313,10 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
    * @param issueInput Jira issue
    * @return Parsed parameters
    */
-  private Map<String, String> findBinaryData(IssueInput issueInput) {
+  private Map<String, String> findBinaryData(IssueUpdateDetails issueInput) {
     Map<String, String> binary = new HashMap<>();
-    String description =
-        issueInput.getField(IssueFieldId.DESCRIPTION_FIELD.id).getValue().toString();
-    if (null != description) {
+    if (issueInput.getFields().get(IssueField.DESCRIPTION_FIELD.getValue()) != null) {
+      String description = issueInput.getFields().get(IssueField.DESCRIPTION_FIELD.getValue()).toString();
       // !54086a2c3c0c7d4446beb3e6.jpg| or [^54086a2c3c0c7d4446beb3e6.xml]
       String regex = "(!|\\[\\^)\\w+\\.\\w{0,10}(\\||\\])";
       Matcher matcher = Pattern.compile(regex).matcher(description);
@@ -352,67 +335,64 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
   @Override
   public List<PostFormField> getTicketFields(final String ticketType, Integration details) {
     List<PostFormField> result = new ArrayList<>();
-    try (JiraRestClient client = getClient(details.getParams())) {
+
+    try {
+      var client = getClient(details.getParams());
       Project jiraProject = getProject(client, details);
-      Optional<IssueType> issueType =
-          StreamSupport.stream(jiraProject.getIssueTypes().spliterator(), false)
-              .filter(input -> ticketType.equalsIgnoreCase(input.getName())).findFirst();
 
-      expect(issueType, Preconditions.IS_PRESENT)
-          .verify(UNABLE_INTERACT_WITH_INTEGRATION, "Ticket type '" + ticketType + "' not found");
+      IssueTypeDetails issueType = jiraProject.getIssueTypes().stream()
+          .filter(input -> ticketType.equalsIgnoreCase(input.getName()))
+          .findFirst()
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Issue type '" + ticketType + "' not found"));
 
-      Page<CimFieldInfo> fields = client.getIssueClient()
-          .getCreateIssueMetaFields(jiraProject.getKey(), issueType.get().getId().toString(), null,
-              null
-          ).claim();
-      Iterable<CimFieldInfo> values = fields.getValues();
-      for (CimFieldInfo issueField : values) {
+      IssueCreateMetadata issueCreateMetadata = client.issuesApi().getCreateIssueMeta(
+          Collections.singletonList(jiraProject.getId()),
+          null,
+          Collections.singletonList(issueType.getId()),
+          null,
+          "projects.issuetypes.fields"
+      );
+
+      ProjectIssueCreateMetadata project = issueCreateMetadata.getProjects().get(0);
+      IssueTypeIssueCreateMetadata cimIssueType = project.getIssuetypes().get(0);
+      cimIssueType.getFields().entrySet().stream().forEach(issueField -> {
         List<String> defValue = null;
-        // Field ID for next JIRA POST ticket requests
-        String fieldID = issueField.getId();
-        String fieldType = issueField.getSchema().getType();
+        String fieldID = issueField.getKey();
+        String fieldName = issueField.getValue().getName();
+        String fieldType = issueField.getValue().getSchema().getType();
+
         List<AllowedValue> allowed = new ArrayList<>();
 
         // Provide values for custom fields with predefined options
-        if (issueField.getAllowedValues() != null) {
-          for (Object o : issueField.getAllowedValues()) {
-            if (o instanceof CustomFieldOption) {
-              CustomFieldOption customField = (CustomFieldOption) o;
-              allowed.add(
-                  new AllowedValue(String.valueOf(customField.getId()), (customField).getValue()));
-            }
-          }
+        if (issueField.getValue().getAllowedValues() != null) {
+          allowed = issueField.getValue().getAllowedValues().stream()
+              .map(value -> (JsonNode) new ObjectMapper().valueToTree(value))
+              .filter(JIRATicketUtils::isCustomField)
+              .map(jn -> new AllowedValue(jn.get("id").asText(), jn.get("value").asText()))
+              .collect(Collectors.toList());
         }
 
-        // Field NAME for user friendly UI output (for UI only)
-        String fieldName = issueField.getName();
+        if (fieldID.equalsIgnoreCase(COMPONENTS_FIELD.getValue())) {
+          for (ProjectComponent component : jiraProject.getComponents()) {
+            allowed.add(new AllowedValue(component.getId(), component.getName()));
+          }
+        }
+        if (fieldID.equalsIgnoreCase(FIX_VERSIONS_FIELD.getValue())) {
+          for (Version version : jiraProject.getVersions()) {
+            allowed.add(new AllowedValue(version.getId(), version.getName()));
+          }
+        }
+        if (fieldID.equalsIgnoreCase(AFFECTS_VERSIONS_FIELD.getValue())) {
+          for (Version version : jiraProject.getVersions()) {
+            allowed.add(new AllowedValue(version.getId(), version.getName()));
+          }
+        }
+        if (fieldID.equalsIgnoreCase(PRIORITY_FIELD.getValue()) && issueField.getKey().equals(PRIORITY_FIELD.name())) {
+          allowed.add(new AllowedValue(issueField.getValue().getKey(), issueField.getValue().getName()));
 
-        if (fieldID.equalsIgnoreCase(IssueFieldId.COMPONENTS_FIELD.id)) {
-          for (BasicComponent component : jiraProject.getComponents()) {
-            allowed.add(new AllowedValue(String.valueOf(component.getId()), component.getName()));
-          }
         }
-        if (fieldID.equalsIgnoreCase(IssueFieldId.FIX_VERSIONS_FIELD.id)) {
-          for (Version version : jiraProject.getVersions()) {
-            allowed.add(new AllowedValue(String.valueOf(version.getId()), version.getName()));
-          }
-        }
-        if (fieldID.equalsIgnoreCase(IssueFieldId.AFFECTS_VERSIONS_FIELD.id)) {
-          for (Version version : jiraProject.getVersions()) {
-            allowed.add(new AllowedValue(String.valueOf(version.getId()), version.getName()));
-          }
-        }
-        if (fieldID.equalsIgnoreCase(IssueFieldId.PRIORITY_FIELD.id)) {
-          Iterable<Object> allowedValuesForPriority = issueField.getAllowedValues();
-          for (Object singlePriority : allowedValuesForPriority) {
-            BasicPriority priority = (BasicPriority) singlePriority;
-            allowed.add(new AllowedValue(String.valueOf(priority.getId()), priority.getName()));
-          }
-        }
-        if (fieldID.equalsIgnoreCase(IssueFieldId.ISSUE_TYPE_FIELD.id)) {
-          defValue = Collections.singletonList(ticketType);
-        }
-        if (fieldID.equalsIgnoreCase(IssueFieldId.ASSIGNEE_FIELD.id)) {
+
+        if (fieldID.equalsIgnoreCase(ASSIGNEE_FIELD.getValue())) {
           allowed = getJiraProjectAssignee(jiraProject);
         }
 
@@ -423,17 +403,16 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
                 // Skip Story Link as greenhopper plugin field.
                 // Skip Sprint field as complex one.
                 //@formatter:on
-        if ("project".equalsIgnoreCase(fieldID) || "attachment".equalsIgnoreCase(fieldID)
-            || "timetracking".equalsIgnoreCase(fieldID) || "Epic Link".equalsIgnoreCase(fieldName)
+        if ("project".equalsIgnoreCase(fieldID)
+            || "attachment".equalsIgnoreCase(fieldID)
+            || "timetracking".equalsIgnoreCase(fieldID)
+            || "Epic Link".equalsIgnoreCase(fieldName)
             || "Sprint".equalsIgnoreCase(fieldName)) {
-          continue;
+          return;
         }
 
-        result.add(
-            new PostFormField(fieldID, fieldName, fieldType, issueField.isRequired(), defValue,
-                allowed
-            ));
-      }
+        result.add(new PostFormField(fieldID, fieldName, fieldType, issueField.getValue().getRequired(), defValue, allowed));
+      });
       return result;
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
@@ -444,13 +423,19 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
   @Override
   public List<String> getIssueTypes(Integration system) {
-    try (JiraRestClient client = getClient(system.getParams())) {
-      Project jiraProject = getProject(client, system);
-      return StreamSupport.stream(jiraProject.getIssueTypes().spliterator(), false)
-          .map(IssueType::getName).collect(Collectors.toList());
+    try {
+      JiraRestClient client = getClient(system.getParams());
+      String projectKey = JiraProps.PROJECT.getParam(system.getParams())
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Project is not specified."));
+      Project jiraProject = client.projectsApi().getProject(projectKey, null, null);
+
+      return jiraProject.getIssueTypes().stream()
+          .map(IssueTypeDetails::getName)
+          .toList();
+    } catch (RestClientException e) {
+      throw new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Project not found.");
     } catch (Exception e) {
-      throw new ReportPortalException(
-          UNABLE_INTERACT_WITH_INTEGRATION, "Check connection settings.");
+      throw new ReportPortalException(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, "Check connection settings.");
     }
   }
 
@@ -486,13 +471,10 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
    * @return List of allowed values
    */
   private List<AllowedValue> getJiraProjectAssignee(Project jiraProject) {
-    Iterable<BasicProjectRole> jiraProjectRoles = jiraProject.getProjectRoles();
     try {
-      return StreamSupport.stream(jiraProjectRoles.spliterator(), false)
-          .filter(role -> role instanceof ProjectRole).map(role -> (ProjectRole) role)
-          .flatMap(role -> StreamSupport.stream(role.getActors().spliterator(), false)).distinct()
-          .map(actor -> new AllowedValue(String.valueOf(actor.getId()), actor.getDisplayName()))
-          .collect(Collectors.toList());
+      return jiraProject.getRoles().entrySet().stream()
+          .map(roleEntry -> new AllowedValue(roleEntry.getKey(), roleEntry.getValue().toString()))
+          .toList();
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
       throw new ReportPortalException("There is a problem while getting issue types", e);
@@ -500,48 +482,42 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
   }
 
-  public JiraRestClient getClient(String uri, String providedUsername, String providePassword) {
-    return new AsynchronousJiraRestClientFactory().create(URI.create(uri),
-        new BasicHttpAuthenticationHandler(providedUsername, providePassword)
-    );
-  }
-
   public JiraRestClient getClient(IntegrationParams params) {
-    String url = JiraProps.URL.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
-    String username = JiraProps.USER_NAME.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Username is not specified."
-        ));
-    String password = JiraProps.PASSWORD.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Password is not specified."
-        ));
-
-    DisposableHttpClient httpClient =
-        (new AsynchronousHttpClientFactory()).createClient(URI.create(url),
-            new BasicHttpAuthenticationHandler(username, simpleEncryptor.decrypt(password))
-        );
-    return new AsynchronousJiraRestClientExtended(URI.create(url), httpClient);
+    String url = JiraProps.URL.getParam(params)
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
+    String username = JiraProps.USER_NAME.getParam(params)
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
+    String password = JiraProps.PASSWORD.getParam(params)
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
+    return new JiraRestClient(url, username, simpleEncryptor.decrypt(password));
   }
 
-  public JiraRestClient getClient(IntegrationParams params, PostTicketRQ postTicketRQ) {
-    String url = JiraProps.URL.getParam(params).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
-    String username = ofNullable(postTicketRQ.getUsername()).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Username is not specified."
-        ));
-    String password = ofNullable(postTicketRQ.getPassword()).orElseThrow(
-        () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-            "Password is not specified."
-        ));
+  @SneakyThrows
+  public void addAttachment(String issueKey, Integration integration, InputStream data) throws RestClientException {
+    String url = JiraProps.URL.getParam(integration.getParams())
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
+    String username = JiraProps.USER_NAME.getParam(integration.getParams())
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
+    String password = JiraProps.PASSWORD.getParam(integration.getParams())
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
+    MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
+        .setLaxMode()
+        .setCharset(StandardCharsets.UTF_8)
+        .addBinaryBody("file", data.readAllBytes(), ContentType.DEFAULT_BINARY, "attachment.txt");
 
-    DisposableHttpClient httpClient =
-        (new AsynchronousHttpClientFactory()).createClient(URI.create(url),
-            new BasicHttpAuthenticationHandler(username, password)
-        );
-    return new AsynchronousJiraRestClientExtended(URI.create(url), httpClient);
+    HttpPost request = new HttpPost(url + String.format("/rest/api/3/issue/%s/attachments", issueKey));
+    request.setEntity(entityBuilder.build());
+    request.setHeader("X-Atlassian-Token", "no-check");
+    request.setHeader("Authorization", "Basic " + getAuthorizationHeader(username, password));
+    HttpClient client = HttpClientBuilder.create().build();
+    HttpResponse response = client.execute(request);
+    Assert.isTrue(response.getCode() == 200, "Failed to upload attachment");
+  }
+
+  public static String getAuthorizationHeader(String user, String password) {
+    String plainCreds = user + ":" + password;
+    byte[] base64CredsBytes = Base64.encodeBase64(plainCreds.getBytes(StandardCharsets.UTF_8));
+    return new String(base64CredsBytes);
   }
 
 }
