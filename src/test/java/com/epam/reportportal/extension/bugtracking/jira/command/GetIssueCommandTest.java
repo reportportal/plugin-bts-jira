@@ -17,40 +17,18 @@
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.extension.bugtracking.jira.JiraProps;
-import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
 import com.epam.reportportal.model.externalsystem.Ticket;
-import com.epam.ta.reportportal.dao.IntegrationRepository;
-import com.epam.ta.reportportal.dao.TicketRepository;
 import java.util.Optional;
-import org.jasypt.util.text.BasicTextEncryptor;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
+import org.junit.jupiter.api.condition.DisabledIf;
 
 
 class GetIssueCommandTest extends BaseCommandTest {
 
-  @Mock
-  private IntegrationRepository integrationRepository;
-
-  @Mock
-  private TicketRepository ticketRepository;
-  @Mock
-  private BasicTextEncryptor simpleEncryptor;
-  @InjectMocks
-  JiraStrategy jiraStrategy;
-
   @Test
-  @Disabled
+  @DisabledIf("disabled")
   void getIssueCommand() {
-
-    when(simpleEncryptor.decrypt(anyString())).thenReturn(JiraProps.PASSWORD.getParam(INTEGRATION.getParams()).get());
-
     Optional<Ticket> response = jiraStrategy.getTicket(String.valueOf((JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD))), INTEGRATION);
 
     assertFalse(response.isEmpty());

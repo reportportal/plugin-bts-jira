@@ -16,25 +16,15 @@
 
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
-import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
 import java.util.List;
-import org.jasypt.util.text.BasicTextEncryptor;
 import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
 class GetIssueTypesCommandTest extends BaseCommandTest {
 
-  @Mock
-  private BasicTextEncryptor simpleEncryptor;
-  @InjectMocks
-  JiraStrategy jiraStrategy;
-
   @Test
-  @Disabled
+  @DisabledIf("disabled")
   void getIssueTypes() {
     List<String> response = jiraStrategy.getIssueTypes(INTEGRATION);
 

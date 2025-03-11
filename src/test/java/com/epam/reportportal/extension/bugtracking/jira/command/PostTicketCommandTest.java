@@ -16,18 +16,15 @@
 
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
-import static com.epam.reportportal.extension.bugtracking.jira.utils.SampleData.STORY;
+
+import static com.epam.reportportal.extension.bugtracking.jira.utils.SampleData.DEFECT;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyLong;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
-import com.epam.reportportal.extension.util.RequestEntityConverter;
 import com.epam.reportportal.model.externalsystem.PostTicketRQ;
 import com.epam.reportportal.model.externalsystem.Ticket;
-import com.epam.ta.reportportal.binary.DataStoreService;
 import com.epam.ta.reportportal.dao.LogRepository;
 import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.item.TestItem;
@@ -35,11 +32,11 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.util.text.BasicTextEncryptor;
-import org.junit.jupiter.api.Disabled;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIf;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.web.client.RestTemplateBuilder;
 import org.springframework.web.client.RestTemplate;
 
@@ -47,10 +44,13 @@ import org.springframework.web.client.RestTemplate;
 @Slf4j
 class PostTicketCommandTest extends BaseCommandTest {
 
-  private final RequestEntityConverter requestEntityConverter = new RequestEntityConverter(objectMapper);
+  @Autowired
+  BasicTextEncryptor basicTextEncryptor;
 
-  @Mock
+/*  @Autowired
+  @Qualifier("attachmentDataStoreService")
   DataStoreService dataStoreService;
+  */
   @Mock
   TestItemRepository itemRepository;
   @Mock
@@ -58,25 +58,20 @@ class PostTicketCommandTest extends BaseCommandTest {
 
   @Mock
   private BasicTextEncryptor simpleEncryptor;
+
   @InjectMocks
   JiraStrategy jiraStrategy;
 
-  @ParameterizedTest
-  @CsvSource(value = {
-      "Story"
-  })
-  @Disabled
-  void postTicketCommand(String issueType) throws JsonProcessingException {
-    if (disabled()) {
-      return;
-    }
+  @Test
+  @DisabledIf("disabled")
+  void postTicketCommand() throws JsonProcessingException {
     TestItem testItem = new TestItem();
     when(itemRepository.findById(anyLong())).thenReturn(Optional.of(testItem));
 
-    PostTicketRQ entity = objectMapper.readValue(STORY, PostTicketRQ.class);
+    PostTicketRQ entity = objectMapper.readValue(DEFECT, PostTicketRQ.class);
 
-    lenient().when(dataStoreService.load(anyString()))
-        .thenReturn(Optional.of(getClass().getClassLoader().getResourceAsStream("attachment.txt")));
+/*    lenient().when(dataStoreService.load(anyString()))
+        .thenReturn(Optional.of(getClass().getClassLoader().getResourceAsStream("attachment.txt")));*/
 
     Ticket ticket = jiraStrategy.submitTicket(entity, INTEGRATION);
     log.info(ticket.getTicketUrl());
@@ -88,7 +83,7 @@ class PostTicketCommandTest extends BaseCommandTest {
 
   private void verifyJiraTicket(Ticket ticket) {
     String username = (String) INTEGRATION.getParams().getParams().get("email");
-    String credentials = basicTextEncryptor.decrypt((String) INTEGRATION.getParams().getParams().get("apiToken"));
+    String credentials = basicTextEncryptor.decrypt((String) INTEGRATION.getParams().getParams().get("password"));
 
     RestTemplate restTemplate = new RestTemplateBuilder()
         .basicAuthentication(username, credentials)
@@ -100,4 +95,3 @@ class PostTicketCommandTest extends BaseCommandTest {
   }
 
 }
-

@@ -65,6 +65,7 @@ dependencies {
     testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     testImplementation('org.junit.jupiter:junit-jupiter:5.11.4')
+    testImplementation 'org.springframework:spring-test:6.2.3'
     testImplementation "org.mockito:mockito-junit-jupiter:5.14.2"
     testImplementation 'org.hamcrest:hamcrest:3.0'
 }
@@ -85,6 +86,10 @@ tasks.register('generateJiraApi', GenerateTask) {
         new URI("https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json")
                 .toURL()
                 .withInputStream { i -> f.withOutputStream { it << i } }
+    }
+    // set latest available api version instead of specific one
+    ant.replaceregexp(match:'/rest/api/3', replace:'/rest/api/latest', flags:'g', byline:false) {
+        fileset(dir: '.', includes: 'swagger-v3.v3.json')
     }
 
     generatorName.set("java")

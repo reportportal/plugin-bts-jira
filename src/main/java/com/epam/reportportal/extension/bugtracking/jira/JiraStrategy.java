@@ -22,7 +22,6 @@
 package com.epam.reportportal.extension.bugtracking.jira;
 
 import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.AFFECTS_VERSIONS_FIELD;
-import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.ASSIGNEE_FIELD;
 import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.COMPONENTS_FIELD;
 import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.FIX_VERSIONS_FIELD;
 import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.PRIORITY_FIELD;
@@ -43,13 +42,11 @@ import com.epam.reportportal.extension.ReportPortalExtensionPoint;
 import com.epam.reportportal.extension.bugtracking.BtsExtension;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.CreatedIssue;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueCreateMetadata;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeDetails;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeIssueCreateMetadata;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.PageOfCreateMetaIssueTypeWithField;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.ProjectComponent;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.ProjectIssueCreateMetadata;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.SearchResults;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.Version;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
@@ -66,8 +63,14 @@ import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.enums.AuthType;
 import com.epam.ta.reportportal.entity.integration.Integration;
 import com.epam.ta.reportportal.entity.integration.IntegrationParams;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import java.io.InputStream;
@@ -80,7 +83,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
+import java.util.stream.StreamSupport;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.hc.client5.http.classic.HttpClient;
@@ -122,13 +125,15 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
   private DataStoreService dataStoreService;
 
   @Autowired
-  private BasicTextEncryptor simpleEncryptor;
+  private BasicTextEncryptor basicTextEncryptor;
 
   @Autowired
   private LogRepository logRepository;
 
   @Autowired
   private TestItemRepository itemRepository;
+
+  ObjectMapper objectMapper = configureObjectMapper();
 
   private Supplier<JIRATicketDescriptionService> descriptionService =
       Suppliers.memoize(() -> new JIRATicketDescriptionService(logRepository, itemRepository));
@@ -155,31 +160,33 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
     return IntegrationGroupEnum.BTS;
   }
 
+  protected ObjectMapper configureObjectMapper() {
+    ObjectMapper om = new ObjectMapper();
+    om.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
+    om.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
+    om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    om.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
+    om.registerModule(new JavaTimeModule());
+    return om;
+  }
+
   @Override
   public boolean testConnection(Integration system) {
     try {
-      IntegrationParams params = ofNullable(system.getParams()).orElseThrow(
-          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-              "Integration params are not specified."
-          ));
+      IntegrationParams params = ofNullable(system.getParams())
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Integration params are not specified."));
 
-      String url = JiraProps.URL.getParam(params).orElseThrow(
-          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
-      String username = JiraProps.USER_NAME.getParam(params).orElseThrow(
-          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-              "Username is not specified."
-          ));
-      String password = JiraProps.PASSWORD.getParam(params).orElseThrow(
-          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-              "Password is not specified."
-          ));
-      String projectKey = JiraProps.PROJECT.getParam(params).orElseThrow(
-          () -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
-              "Project is not specified."
-          ));
+      String url = JiraProps.URL.getParam(params)
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
+      String username = JiraProps.USER_NAME.getParam(params)
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
+      String password = JiraProps.PASSWORD.getParam(params)
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
+      String projectKey = JiraProps.PROJECT.getParam(params)
+          .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Project is not specified."));
 
       validateExternalSystemDetails(system);
-      var client = new JiraRestClient(url, username, simpleEncryptor.decrypt(password));
+      var client = new JiraRestClient(url, username, basicTextEncryptor.decrypt(password));
       return client.projectsApi().getProject(projectKey, null, null) != null;
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
@@ -244,10 +251,8 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
       if (null != components.getValue()) {
         List<ProjectComponent> validComponents = jiraProject.getComponents();
 
-        validComponents.forEach(component -> expect(component, in(validComponents)).verify(
-            UNABLE_INTERACT_WITH_INTEGRATION,
-            formattedSupplier("Component '{}' not exists in the external system", component)
-        ));
+        validComponents.forEach(component -> expect(component, in(validComponents))
+            .verify(UNABLE_INTERACT_WITH_INTEGRATION, formattedSupplier("Component '{}' not exists in the external system", component)));
       }
 
       // TODO consider to modify code below - project cached
@@ -345,74 +350,72 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
           .findFirst()
           .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Issue type '" + ticketType + "' not found"));
 
-      IssueCreateMetadata issueCreateMetadata = client.issuesApi().getCreateIssueMeta(
-          Collections.singletonList(jiraProject.getId()),
-          null,
-          Collections.singletonList(issueType.getId()),
-          null,
-          "projects.issuetypes.fields"
-      );
+      PageOfCreateMetaIssueTypeWithField issueCreateMetadata = client.issuesApi()
+          .getCreateIssueMetaIssueTypeId(jiraProject.getId(), issueType.getId(), 0, 1000);
 
-      ProjectIssueCreateMetadata project = issueCreateMetadata.getProjects().get(0);
-      IssueTypeIssueCreateMetadata cimIssueType = project.getIssuetypes().get(0);
-      cimIssueType.getFields().entrySet().stream().forEach(issueField -> {
-        List<String> defValue = null;
-        String fieldID = issueField.getKey();
-        String fieldName = issueField.getValue().getName();
-        String fieldType = issueField.getValue().getSchema().getType();
+      ((List<Map<String, Object>>) issueCreateMetadata.getAdditionalProperties().get("values")).stream()
+          .map(a -> objectMapper.convertValue(a, new TypeReference<Map<String, Object>>() {
+          }))
+          .map(field -> (JsonNode) new ObjectMapper().valueToTree(field))
+          .forEach(jsonField -> {
+                List<String> defValue = null;
+                String fieldID = jsonField.get("fieldId").asText();
+                String fieldName = jsonField.get("name").asText();
+                String fieldType = jsonField.get("schema").get("type").asText();
+                boolean required = jsonField.get("required").asBoolean();
 
-        List<AllowedValue> allowed = new ArrayList<>();
+                // Provide values for custom fields with predefined options
+                List<AllowedValue> allowedList = new ArrayList<>();
+                if (jsonField.get("allowedValues") != null) {
+                  allowedList.addAll(StreamSupport.stream(jsonField.get("allowedValues").spliterator(), false)
+                      .filter(JIRATicketUtils::isCustomField)
+                      .map(allowedType -> new AllowedValue(allowedType.get("id").asText(), allowedType.get("value").asText()))
+                      .toList());
+                }
 
-        // Provide values for custom fields with predefined options
-        if (issueField.getValue().getAllowedValues() != null) {
-          allowed = issueField.getValue().getAllowedValues().stream()
-              .map(value -> (JsonNode) new ObjectMapper().valueToTree(value))
-              .filter(JIRATicketUtils::isCustomField)
-              .map(jn -> new AllowedValue(jn.get("id").asText(), jn.get("value").asText()))
-              .collect(Collectors.toList());
-        }
+                if (fieldID.equalsIgnoreCase(COMPONENTS_FIELD.getValue())) {
+                  for (ProjectComponent component : jiraProject.getComponents()) {
+                    allowedList.add(new AllowedValue(component.getId(), component.getName()));
+                  }
+                }
+                if (fieldID.equalsIgnoreCase(FIX_VERSIONS_FIELD.getValue())) {
+                  for (Version version : jiraProject.getVersions()) {
+                    allowedList.add(new AllowedValue(version.getId(), version.getName()));
+                  }
+                }
+                if (fieldID.equalsIgnoreCase(AFFECTS_VERSIONS_FIELD.getValue())) {
+                  for (Version version : jiraProject.getVersions()) {
+                    allowedList.add(new AllowedValue(version.getId(), version.getName()));
+                  }
+                }
+                if (fieldID.equalsIgnoreCase(PRIORITY_FIELD.getValue())) {
+                  allowedList.add(new AllowedValue(fieldID, fieldName));
 
-        if (fieldID.equalsIgnoreCase(COMPONENTS_FIELD.getValue())) {
-          for (ProjectComponent component : jiraProject.getComponents()) {
-            allowed.add(new AllowedValue(component.getId(), component.getName()));
-          }
-        }
-        if (fieldID.equalsIgnoreCase(FIX_VERSIONS_FIELD.getValue())) {
-          for (Version version : jiraProject.getVersions()) {
-            allowed.add(new AllowedValue(version.getId(), version.getName()));
-          }
-        }
-        if (fieldID.equalsIgnoreCase(AFFECTS_VERSIONS_FIELD.getValue())) {
-          for (Version version : jiraProject.getVersions()) {
-            allowed.add(new AllowedValue(version.getId(), version.getName()));
-          }
-        }
-        if (fieldID.equalsIgnoreCase(PRIORITY_FIELD.getValue()) && issueField.getKey().equals(PRIORITY_FIELD.name())) {
-          allowed.add(new AllowedValue(issueField.getValue().getKey(), issueField.getValue().getName()));
+                }
 
-        }
+                if (fieldID.equalsIgnoreCase(IssueField.ISSUE_TYPE_FIELD.getValue())) {
+                  defValue = Collections.singletonList(ticketType);
+                }
 
-        if (fieldID.equalsIgnoreCase(ASSIGNEE_FIELD.getValue())) {
-          allowed = getJiraProjectAssignee(jiraProject);
-        }
-
-        //@formatter:off
+                //@formatter:off
                 // Skip project field as external from list
                 // Skip attachment cause we are not providing this functionality now
                 // Skip timetracking field cause complexity. There are two fields with Original Estimation and Remaining Estimation.
                 // Skip Story Link as greenhopper plugin field.
                 // Skip Sprint field as complex one.
                 //@formatter:on
-        if ("project".equalsIgnoreCase(fieldID)
-            || "attachment".equalsIgnoreCase(fieldID)
-            || "timetracking".equalsIgnoreCase(fieldID)
-            || "Epic Link".equalsIgnoreCase(fieldName)
-            || "Sprint".equalsIgnoreCase(fieldName)) {
-          return;
-        }
+                if ("project".equalsIgnoreCase(fieldID)
+                    || "attachment".equalsIgnoreCase(fieldID)
+                    || "timetracking".equalsIgnoreCase(fieldID)
+                    || "Epic Link".equalsIgnoreCase(fieldName)
+                    || "Sprint".equalsIgnoreCase(fieldName)) {
+                  return;
+                }
 
-        result.add(new PostFormField(fieldID, fieldName, fieldType, issueField.getValue().getRequired(), defValue, allowed));
-      });
+                result.add(new PostFormField(fieldID, fieldName, fieldType, required, defValue, allowedList));
+
+              }
+          );
       return result;
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
@@ -464,23 +467,6 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
         UNABLE_INTERACT_WITH_INTEGRATION, "JIRA URL value cannot be NULL");
   }
 
-  /**
-   * Get list of project users available for assignee field
-   *
-   * @param jiraProject Project from JIRA
-   * @return List of allowed values
-   */
-  private List<AllowedValue> getJiraProjectAssignee(Project jiraProject) {
-    try {
-      return jiraProject.getRoles().entrySet().stream()
-          .map(roleEntry -> new AllowedValue(roleEntry.getKey(), roleEntry.getValue().toString()))
-          .toList();
-    } catch (Exception e) {
-      LOGGER.error(e.getMessage(), e);
-      throw new ReportPortalException("There is a problem while getting issue types", e);
-    }
-
-  }
 
   public JiraRestClient getClient(IntegrationParams params) {
     String url = JiraProps.URL.getParam(params)
@@ -489,7 +475,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
     String password = JiraProps.PASSWORD.getParam(params)
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
-    return new JiraRestClient(url, username, simpleEncryptor.decrypt(password));
+    return new JiraRestClient(url, username, basicTextEncryptor.decrypt(password));
   }
 
   @SneakyThrows

@@ -17,7 +17,11 @@
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static com.epam.reportportal.extension.bugtracking.jira.utils.TestProperties.getTestProperties;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.when;
 
+import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
+import com.epam.reportportal.extension.bugtracking.jira.TestConf;
 import com.epam.ta.reportportal.dao.ProjectRepository;
 import com.epam.ta.reportportal.entity.integration.Integration;
 import com.epam.ta.reportportal.entity.integration.IntegrationParams;
@@ -34,19 +38,27 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
 // set values in 'integration.properties' to enable the tests
 @Slf4j
 @ExtendWith(MockitoExtension.class)
-@Disabled
+@SpringJUnitConfig(classes = TestConf.class)
 public abstract class BaseCommandTest {
 
   @Mock
   ProjectRepository projectRepository;
+
+  @Mock
+  BasicTextEncryptor basicTextEncryptor;
+
+  @InjectMocks
+  JiraStrategy jiraStrategy;
 
 
   public static final Map<String, Object> JIRA_COMMAND_PARAMS = new HashMap<>();
@@ -54,12 +66,9 @@ public abstract class BaseCommandTest {
   public static final String PROJECT_ID_FIELD = "projectId";
   public static final Integration INTEGRATION = new Integration();
 
-  public static BasicTextEncryptor basicTextEncryptor = new BasicTextEncryptor();
   public static ObjectMapper objectMapper = new ObjectMapper();
 
   static {
-    basicTextEncryptor.setPassword("123");
-
     objectMapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
     objectMapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
     objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -75,13 +84,7 @@ public abstract class BaseCommandTest {
     integrationProps.keySet()
         .stream()
         .map(String::valueOf)
-        .forEach(key -> {
-          if (key.equals("apiToken")) {
-            params.put(key, basicTextEncryptor.encrypt(integrationProps.getProperty(key)));
-          } else {
-            params.put(key, integrationProps.getProperty(key));
-          }
-        });
+        .forEach(key -> params.put(key, integrationProps.getProperty(key)));
     INTEGRATION.setParams(new IntegrationParams(params));
 
     Properties jobProps = getTestProperties("jira-project.properties");
@@ -91,6 +94,12 @@ public abstract class BaseCommandTest {
     if (StringUtils.isNoneBlank((String) jobProps.get(PROJECT_ID_FIELD))) {
       JIRA_COMMAND_PARAMS.put(PROJECT_ID_FIELD, Long.valueOf(String.valueOf(jobProps.get(PROJECT_ID_FIELD)))); // Long
     }
+  }
+
+  @BeforeEach
+  void init() {
+    when(basicTextEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
   }
 
   protected boolean disabled() {

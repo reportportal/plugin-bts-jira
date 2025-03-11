@@ -18,21 +18,10 @@ package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
-import org.jasypt.util.text.BasicTextEncryptor;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
-@Disabled
 class GetIssueFieldsCommandTest extends BaseCommandTest {
-
-  @Mock
-  private BasicTextEncryptor simpleEncryptor;
-  @InjectMocks
-  JiraStrategy jiraStrategy;
 
   @ParameterizedTest
   @CsvSource(value = {
@@ -44,7 +33,6 @@ class GetIssueFieldsCommandTest extends BaseCommandTest {
     }
 
     var response = jiraStrategy.getTicketFields(issueType, INTEGRATION);
-
     assertFalse(response.isEmpty());
   }
 }

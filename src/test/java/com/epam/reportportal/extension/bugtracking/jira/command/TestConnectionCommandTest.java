@@ -17,31 +17,15 @@
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.extension.bugtracking.jira.JiraProps;
-import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
-import org.jasypt.util.text.BasicTextEncryptor;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 
 class TestConnectionCommandTest extends BaseCommandTest {
 
-  @Mock
-  private BasicTextEncryptor simpleEncryptor;
-  @InjectMocks
-  JiraStrategy jiraStrategy;
-
-
   @Test
-  @Disabled
+  @DisabledIf("disabled")
   void testConnection() {
-    when(simpleEncryptor.decrypt(anyString())).thenReturn(JiraProps.PASSWORD.getParam(INTEGRATION.getParams()).get());
-
     boolean response = jiraStrategy.testConnection(INTEGRATION);
     assertTrue(response);
   }

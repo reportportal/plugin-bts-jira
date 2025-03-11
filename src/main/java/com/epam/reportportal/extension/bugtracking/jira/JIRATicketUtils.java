@@ -25,11 +25,10 @@ import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.
 
 import com.epam.reportportal.extension.bugtracking.jira.api.model.EntityProperty;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueCreateMetadata;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeDetails;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeIssueCreateMetadata;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.PageOfCreateMetaIssueTypeWithField;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.ProjectIssueCreateMetadata;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.User;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
@@ -39,18 +38,16 @@ import com.epam.reportportal.model.externalsystem.Ticket;
 import com.epam.reportportal.rules.commons.validation.BusinessRule;
 import com.epam.reportportal.rules.commons.validation.Suppliers;
 import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
-
 import com.epam.ta.reportportal.commons.Predicates;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
@@ -89,21 +86,13 @@ public class JIRATicketUtils {
     String userDefinedDescription = "";
     IssueUpdateDetails issueUpdateDetails = new IssueUpdateDetails();
 
-    IssueCreateMetadata issueCreateMetadata = client.issuesApi().getCreateIssueMeta(
-        Collections.singletonList(jiraProject.getId()),
-        null,
-        Collections.singletonList(issueType.getId()),
-        null,
-        "projects.issuetypes.fields"
-    );
     issueUpdateDetails.putFieldsItem("project", Map.entry("id", jiraProject.getId()));
     issueUpdateDetails.putFieldsItem("issuetype", Map.entry("id", issueType.getId()));
 
-    ProjectIssueCreateMetadata project = issueCreateMetadata.getProjects().get(0);
-    BusinessRule.expect(project, Predicates.notNull())
-        .verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, String.format("Project %s not found", jiraProject.getKey()));
-
-    List<IssueTypeIssueCreateMetadata> cimIssueType = project.getIssuetypes();
+    PageOfCreateMetaIssueTypeWithField metaIssueTypePage = client.issuesApi()
+        .getCreateIssueMetaIssueTypeId(jiraProject.getId(), issueType.getId(), 0, 100);
+    var issueMetaFields = (List<Map<String, Object>>) metaIssueTypePage.getAdditionalProperties().get("values");
+    var fieldsMap = issueMetaFields.stream().collect(Collectors.toMap(k -> k.get("fieldId"), Function.identity()));
 
     for (PostFormField one : ticketRQ.getFields()) {
 
@@ -137,37 +126,39 @@ public class JIRATicketUtils {
         continue;
       }
       if (one.getId().equalsIgnoreCase(IssueField.COMPONENTS_FIELD.value)) {
-        issueUpdateDetails.putFieldsItem(IssueField.COMPONENTS_FIELD.value, one.getValue());
+        var names = one.getValue().stream().map(version -> Map.entry("name", version)).toList();
+        issueUpdateDetails.putFieldsItem(IssueField.COMPONENTS_FIELD.getValue(), names);
         continue;
       }
       if (one.getId().equalsIgnoreCase(ASSIGNEE_FIELD.getValue())) {
-        issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("id", one.getValue().get(0)));
+        issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("name", one.getValue().get(0)));
         continue;
       }
       if (one.getId().equalsIgnoreCase(IssueField.REPORTER_FIELD.value)) {
-        issueUpdateDetails.putFieldsItem(IssueField.REPORTER_FIELD.value, Map.entry("id", one.getValue().get(0)));
+        issueUpdateDetails.putFieldsItem(IssueField.REPORTER_FIELD.value, Map.entry("name", one.getValue().get(0)));
         continue;
       }
       if (one.getId().equalsIgnoreCase(IssueField.AFFECTS_VERSIONS_FIELD.value)) {
-        var versions = one.getValue().stream().map(version -> Map.entry("id", version)).toList();
+        var versions = one.getValue().stream().map(version -> Map.entry("name", version)).toList();
         issueUpdateDetails.putFieldsItem(IssueField.AFFECTS_VERSIONS_FIELD.value, versions);
         continue;
       }
       if (one.getId().equalsIgnoreCase(IssueField.FIX_VERSIONS_FIELD.value)) {
-        var versions = one.getValue().stream().map(version -> Map.entry("id", version)).toList();
+        var versions = one.getValue().stream().map(version -> Map.entry("name", version)).toList();
         issueUpdateDetails.putFieldsItem(IssueField.FIX_VERSIONS_FIELD.value, versions);
         continue;
       }
 
-      var cimFieldInfo = cimIssueType.getFirst().getFields().get(one.getId());
+      var cimFieldInfo = fieldsMap.get(one.getId());
       // Arrays and fields with 'allowedValues' handler
-      if (cimFieldInfo.getAllowedValues() != null) {
+
+      if (cimFieldInfo.get("allowedValues") != null) {
         try {
+          var allowedValues = ((List<Map<String, Object>>)cimFieldInfo.get("allowedValues"));
           List<Object> arrayOfValues = new ArrayList<>();
-          for (Object o : cimFieldInfo.getAllowedValues()) {
+          for (Object o : allowedValues) {
             JsonNode jn = new ObjectMapper().valueToTree(o);
             if (isCustomField(jn) && one.getValue().contains(jn.get("value").asText())) {
-              issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("id", one.getValue().get(0)));
               arrayOfValues.add(Map.entry("id", jn.get("id").asText()));
             }
           }
