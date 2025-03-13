@@ -86,12 +86,13 @@ import java.util.regex.Pattern;
 import java.util.stream.StreamSupport;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Base64;
-import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.commons.io.IOUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.entity.mime.ByteArrayBody;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.pf4j.Extension;
 import org.slf4j.Logger;
@@ -99,7 +100,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
-import org.springframework.util.Assert;
 import org.springframework.web.client.RestClientException;
 
 /**
@@ -273,11 +273,8 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
       String issueKey = createdIssue.getKey();
 
       // post binary data
-      for (Map.Entry<String, String> binaryDataEntry : binaryData.entrySet()) {
-        Optional<InputStream> data = dataStoreService.load(binaryDataEntry.getKey());
-        if (data.isPresent()) {
-          addAttachment(issueKey, details, data.get());
-        }
+      if (!binaryData.isEmpty()) {
+        addAttachment(issueKey, details, binaryData);
       }
 
       return getTicket(issueKey, details.getParams(), client)
@@ -389,8 +386,11 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
                   }
                 }
                 if (fieldID.equalsIgnoreCase(PRIORITY_FIELD.getValue())) {
-                  allowedList.add(new AllowedValue(fieldID, fieldName));
-
+                  if (jsonField.get("allowedValues") != null) {
+                    allowedList.addAll(StreamSupport.stream(jsonField.get("allowedValues").spliterator(), false)
+                        .map(allowedType -> new AllowedValue(allowedType.get("id").asText(), allowedType.get("name").asText()))
+                        .toList());
+                  }
                 }
 
                 if (fieldID.equalsIgnoreCase(IssueField.ISSUE_TYPE_FIELD.getValue())) {
@@ -478,32 +478,63 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
     return new JiraRestClient(url, username, basicTextEncryptor.decrypt(password));
   }
 
+
   @SneakyThrows
-  public void addAttachment(String issueKey, Integration integration, InputStream data) throws RestClientException {
+  public void addAttachment(String issueKey, Integration integration, Map<String, String> binaryData) throws RestClientException {
     String url = JiraProps.URL.getParam(integration.getParams())
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
     String username = JiraProps.USER_NAME.getParam(integration.getParams())
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
     String password = JiraProps.PASSWORD.getParam(integration.getParams())
+        .map(basicTextEncryptor::decrypt)
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
+
+    var count = 0;
     MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
         .setLaxMode()
-        .setCharset(StandardCharsets.UTF_8)
-        .addBinaryBody("file", data.readAllBytes(), ContentType.DEFAULT_BINARY, "attachment.txt");
+        .setCharset(StandardCharsets.UTF_8);
 
-    HttpPost request = new HttpPost(url + String.format("/rest/api/3/issue/%s/attachments", issueKey));
-    request.setEntity(entityBuilder.build());
-    request.setHeader("X-Atlassian-Token", "no-check");
-    request.setHeader("Authorization", "Basic " + getAuthorizationHeader(username, password));
-    HttpClient client = HttpClientBuilder.create().build();
-    HttpResponse response = client.execute(request);
-    Assert.isTrue(response.getCode() == 200, "Failed to upload attachment");
+    for (Map.Entry<String, String> binaryDataEntry : binaryData.entrySet()) {
+      Optional<InputStream> data = dataStoreService.load(binaryDataEntry.getKey());
+      if (data.isPresent()) {
+        var fileName = binaryDataEntry.getValue();
+        var bytes = IOUtils.toByteArray(data.get());
+        if (bytes.length == 0) {
+          LOGGER.warn("Empty file {}", fileName);
+          continue;
+        }
+        ByteArrayBody fileBody = new ByteArrayBody(bytes, fileName);
+
+        entityBuilder.addPart("file", fileBody);
+        count++;
+      }
+      if (count > 0) {
+        HttpPost request = new HttpPost(url + String.format("/rest/api/latest/issue/%s/attachments", issueKey));
+        request.setEntity(entityBuilder.build());
+        request.setHeader("X-Atlassian-Token", "no-check");
+        request.setHeader("Authorization", "Basic " + getAuthorizationHeader(username, password));
+
+        try (CloseableHttpClient httpclient = HttpClients.createDefault()) {
+          httpclient.execute(request, httpResponse -> {
+            if (failedHttpResponse(httpResponse)) {
+              LOGGER.error("{} {}", httpResponse.getCode(), httpResponse.getReasonPhrase());
+              throw new ReportPortalException("Failed to upload attachment for " + issueKey);
+            }
+            return httpResponse;
+          });
+        }
+      }
+    }
   }
 
   public static String getAuthorizationHeader(String user, String password) {
     String plainCreds = user + ":" + password;
     byte[] base64CredsBytes = Base64.encodeBase64(plainCreds.getBytes(StandardCharsets.UTF_8));
     return new String(base64CredsBytes);
+  }
+
+  public static boolean failedHttpResponse(ClassicHttpResponse responseCode) {
+    return !(responseCode.getCode() >= 200 && responseCode.getCode() < 300);
   }
 
 }

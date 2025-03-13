@@ -20,15 +20,20 @@ package com.epam.reportportal.extension.bugtracking.jira.command;
 import static com.epam.reportportal.extension.bugtracking.jira.utils.SampleData.DEFECT;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
 import com.epam.reportportal.model.externalsystem.PostTicketRQ;
 import com.epam.reportportal.model.externalsystem.Ticket;
+import com.epam.ta.reportportal.binary.DataStoreService;
 import com.epam.ta.reportportal.dao.LogRepository;
 import com.epam.ta.reportportal.dao.TestItemRepository;
 import com.epam.ta.reportportal.entity.item.TestItem;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.util.text.BasicTextEncryptor;
@@ -47,10 +52,9 @@ class PostTicketCommandTest extends BaseCommandTest {
   @Autowired
   BasicTextEncryptor basicTextEncryptor;
 
-/*  @Autowired
-  @Qualifier("attachmentDataStoreService")
+  @Mock
   DataStoreService dataStoreService;
-  */
+
   @Mock
   TestItemRepository itemRepository;
   @Mock
@@ -81,6 +85,21 @@ class PostTicketCommandTest extends BaseCommandTest {
 
   }
 
+  @Test
+  @DisabledIf("disabled")
+  void addAttachmentTest() {
+    var validJiraTicket = "EPMRPP-100426";
+    Map<String, String> map = new HashMap<>();
+    map.put("file1", "file1.txt");
+    //map.put("file2", "file2.txt");
+    lenient().when(dataStoreService.load(anyString()))
+        .thenReturn(
+            Optional.ofNullable(getClass().getClassLoader().getResourceAsStream("attachment.txt")),
+            Optional.ofNullable(getClass().getClassLoader().getResourceAsStream("attachment2.txt"))
+        );
+    jiraStrategy.addAttachment(validJiraTicket, INTEGRATION, map);
+  }
+
   private void verifyJiraTicket(Ticket ticket) {
     String username = (String) INTEGRATION.getParams().getParams().get("email");
     String credentials = basicTextEncryptor.decrypt((String) INTEGRATION.getParams().getParams().get("password"));
@@ -89,8 +108,6 @@ class PostTicketCommandTest extends BaseCommandTest {
         .basicAuthentication(username, credentials)
         .build();
 
-    var jiraTicket = restTemplate.getForObject(ticket.getTicketUrl(), String.class);
-    log.info(ticket.getTicketUrl());
     // TODO: make required checks with jira ticket
   }
 

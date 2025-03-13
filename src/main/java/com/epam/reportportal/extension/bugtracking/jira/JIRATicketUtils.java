@@ -23,7 +23,6 @@ package com.epam.reportportal.extension.bugtracking.jira;
 
 import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.ASSIGNEE_FIELD;
 
-import com.epam.reportportal.extension.bugtracking.jira.api.model.EntityProperty;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeDetails;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
@@ -121,7 +120,7 @@ public class JIRATicketUtils {
       }
       if (one.getId().equalsIgnoreCase(IssueField.PRIORITY_FIELD.value)) {
         if (IssuePriority.findByName(one.getValue().get(0)) != null) {
-          issueUpdateDetails.putFieldsItem(IssueField.PRIORITY_FIELD.value, one.getValue().get(0));
+          issueUpdateDetails.putFieldsItem(IssueField.PRIORITY_FIELD.value, Map.entry("name", one.getValue().get(0)));
         }
         continue;
       }
@@ -154,7 +153,7 @@ public class JIRATicketUtils {
 
       if (cimFieldInfo.get("allowedValues") != null) {
         try {
-          var allowedValues = ((List<Map<String, Object>>)cimFieldInfo.get("allowedValues"));
+          var allowedValues = ((List<Map<String, Object>>) cimFieldInfo.get("allowedValues"));
           List<Object> arrayOfValues = new ArrayList<>();
           for (Object o : allowedValues) {
             JsonNode jn = new ObjectMapper().valueToTree(o);
@@ -187,11 +186,8 @@ public class JIRATicketUtils {
             User jiraUser = client.usersApi().getUser(null, one.getValue().get(0), null, null);
             // FIXME change validator as common validate method for
             // fields
-            BusinessRule.expect(jiraUser, Predicates.notNull())
-                .verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, Suppliers.formattedSupplier(
-                    "Value for '{}' field with 'user' type wasn't found in JIRA",
-                    one.getValue().get(0)
-                ));
+            BusinessRule.expect(jiraUser, Predicates.notNull()).verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+                Suppliers.formattedSupplier("Value for '{}' field with 'user' type wasn't found in JIRA", one.getValue().get(0)));
             issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("id", jiraUser.getAccountId()));
           }
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.DATE.name)) {
@@ -207,8 +203,9 @@ public class JIRATicketUtils {
         }
       }
     }
-    issueUpdateDetails.getProperties()
-        .add(new EntityProperty("description", userDefinedDescription.concat("\n").concat(descriptionService.getDescription(ticketRQ))));
+    issueUpdateDetails.putFieldsItem(IssueField.DESCRIPTION_FIELD.getValue(),
+        userDefinedDescription.concat("\n").concat(descriptionService.getDescription(ticketRQ)));
+
     return issueUpdateDetails;
   }
 

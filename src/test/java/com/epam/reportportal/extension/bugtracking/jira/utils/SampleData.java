@@ -47,6 +47,41 @@ public class SampleData {
                              "Test"
                          ]
                      },
+                       {
+                                 "id": "priority",
+                                 "value": [
+                                     "Trivial"
+                                 ],
+                                 "required": false,
+                                 "fieldName": "Priority",
+                                 "fieldType": "priority",
+                                 "definedValues": [
+                                     {
+                                         "valueId": "1",
+                                         "valueName": "Blocker"
+                                     },
+                                     {
+                                         "valueId": "2",
+                                         "valueName": "Critical"
+                                     },
+                                     {
+                                         "valueId": "3",
+                                         "valueName": "Major"
+                                     },
+                                     {
+                                         "valueId": "4",
+                                         "valueName": "Minor"
+                                     },
+                                     {
+                                         "valueId": "5",
+                                         "valueName": "Trivial"
+                                     },
+                                     {
+                                         "valueId": "10700",
+                                         "valueName": "None"
+                                     }
+                                 ]
+                             },
                      {
                          "id": "customfield_11000",
                          "value": [

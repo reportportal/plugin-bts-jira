@@ -18,7 +18,7 @@ package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static com.epam.reportportal.extension.bugtracking.jira.utils.TestProperties.getTestProperties;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.lenient;
 
 import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
 import com.epam.reportportal.extension.bugtracking.jira.TestConf;
@@ -98,7 +98,7 @@ public abstract class BaseCommandTest {
 
   @BeforeEach
   void init() {
-    when(basicTextEncryptor.decrypt(anyString()))
+    lenient().when(basicTextEncryptor.decrypt(anyString()))
         .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
   }
 

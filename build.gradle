@@ -49,7 +49,7 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:11fa2a6'
+        implementation 'com.github.reportportal:commons-dao:6298e53'
         implementation 'com.github.reportportal:plugin-api:8874441'
         annotationProcessor 'com.github.reportportal:plugin-api:8874441'
     }
@@ -83,12 +83,12 @@ sourceSets {
 tasks.register('generateJiraApi', GenerateTask) {
     def f = new File("swagger-v3.v3.json")
     if (!f.exists()) {
-        new URI("https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json")
+        new URI("https://dac-static.atlassian.com/cloud/jira/platform/swagger.v3.json?_v=1.7759.0-0.1322.0")
                 .toURL()
                 .withInputStream { i -> f.withOutputStream { it << i } }
     }
     // set latest available api version instead of specific one
-    ant.replaceregexp(match:'/rest/api/3', replace:'/rest/api/latest', flags:'g', byline:false) {
+    ant.replaceregexp(match: '/rest/api/3', replace: '/rest/api/latest', flags: 'g', byline: false) {
         fileset(dir: '.', includes: 'swagger-v3.v3.json')
     }
 
