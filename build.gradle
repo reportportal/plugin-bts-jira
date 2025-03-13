@@ -83,7 +83,7 @@ sourceSets {
 tasks.register('generateJiraApi', GenerateTask) {
     def f = new File("swagger-v3.v3.json")
     if (!f.exists()) {
-        new URI("https://dac-static.atlassian.com/cloud/jira/platform/swagger.v3.json?_v=1.7759.0-0.1322.0")
+        new URI("https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json")
                 .toURL()
                 .withInputStream { i -> f.withOutputStream { it << i } }
     }
