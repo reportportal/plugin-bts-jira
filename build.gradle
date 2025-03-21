@@ -81,19 +81,13 @@ sourceSets {
 
 
 tasks.register('generateJiraApi', GenerateTask) {
-    def f = new File("swagger-v3.v3.json")
-    if (!f.exists()) {
-        new URI("https://developer.atlassian.com/cloud/jira/platform/swagger-v3.v3.json")
-                .toURL()
-                .withInputStream { i -> f.withOutputStream { it << i } }
-    }
     // set latest available api version instead of specific one
     ant.replaceregexp(match: '/rest/api/3', replace: '/rest/api/latest', flags: 'g', byline: false) {
-        fileset(dir: '.', includes: 'swagger-v3.v3.json')
+        fileset(dir: '.', includes: "src/main/resources/openapi/swagger-v3.v3.json")
     }
 
     generatorName.set("java")
-    inputSpec.set("swagger-v3.v3.json")
+    inputSpec.set("$rootDir/src/main/resources/openapi/swagger-v3.v3.json")
     outputDir.set("$buildDir/generated")
     configFile.set("$rootDir/src/main/resources/openapi/config.json")
     ignoreFileOverride = "${projectDir.path}/.openapi-generator-ignore"
@@ -122,6 +116,7 @@ wrapper {
 generatePomFileForShadowPublication { pom.packaging = "jar" }
 
 jar {
+    processResources.exclude('openapi')
     manifest {
         attributes(
                 "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(' '),
