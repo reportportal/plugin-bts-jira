@@ -147,6 +147,10 @@ public class JIRATicketUtils {
         issueUpdateDetails.putFieldsItem(IssueField.FIX_VERSIONS_FIELD.value, versions);
         continue;
       }
+      if (one.getId().equalsIgnoreCase(IssueField.PARENT_FIELD.value) && !one.getValue().isEmpty()) {
+        issueUpdateDetails.putFieldsItem(IssueField.PARENT_FIELD.value, Map.entry("key", one.getValue().get(0)));
+        continue;
+      }
 
       var cimFieldInfo = fieldsMap.get(one.getId());
       // Arrays and fields with 'allowedValues' handler
