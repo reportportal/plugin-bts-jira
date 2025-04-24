@@ -49,9 +49,9 @@ dependencies {
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:b7e1fce'
-        implementation 'com.github.reportportal:plugin-api:e945fcd'
-        annotationProcessor 'com.github.reportportal:plugin-api:e945fcd'
+        implementation 'com.github.reportportal:commons-dao:cd88356'
+        implementation 'com.github.reportportal:plugin-api:ae5c502'
+        annotationProcessor 'com.github.reportportal:plugin-api:ae5c502'
     }
     implementation("org.apache.httpcomponents.client5:httpclient5:5.4.2") // supports gzip encoding
     implementation "org.hibernate.validator:hibernate-validator:8.0.2.Final"
