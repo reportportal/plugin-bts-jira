@@ -1,8 +1,11 @@
 plugins {
-    id "io.spring.dependency-management" version "1.1.4"
+    id "io.spring.dependency-management" version "1.1.7"
     id 'java'
     id 'jacoco'
+    id "org.openapi.generator" version "7.12.0"
 }
+
+import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
 
 project.ext {
     publishRepo = "https://maven.pkg.github.com/reportportal/plugin-bts-jira"
@@ -38,33 +41,57 @@ java {
     targetCompatibility = JavaVersion.VERSION_21
 }
 
+ext['spring-boot.version'] = "${springBootVersion}"
+
 dependencies {
     if (releaseMode) {
         implementation 'com.epam.reportportal:commons-dao'
         implementation 'com.epam.reportportal:plugin-api'
         annotationProcessor 'com.epam.reportportal:plugin-api'
     } else {
-        implementation 'com.github.reportportal:commons-dao:8dcc514'
-        implementation 'com.github.reportportal:plugin-api:815c74a'
-        annotationProcessor 'com.github.reportportal:plugin-api:815c74a'
+        implementation 'com.github.reportportal:commons-dao:6298e53'
+        implementation 'com.github.reportportal:plugin-api:8874441'
+        annotationProcessor 'com.github.reportportal:plugin-api:8874441'
     }
-    implementation 'org.hibernate:hibernate-core:5.6.15.Final'
+    implementation("org.apache.httpcomponents.client5:httpclient5:5.4.2") // supports gzip encoding
+    implementation "org.hibernate.validator:hibernate-validator:8.0.2.Final"
+    implementation 'jakarta.el:jakarta.el-api:6.0.1'
+    implementation 'org.glassfish:jakarta.el:4.0.2'
+    implementation "org.springdoc:springdoc-openapi-common:1.8.0"
 
-    implementation 'ch.qos.logback:logback-classic:1.2.3'
-    implementation 'org.slf4j:slf4j-api:1.7.25'
+    compileOnly "org.projectlombok:lombok:${lombokVersion}"
+    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
+    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
+    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
-    implementation 'io.atlassian.fugue:fugue:4.7.2'
-    implementation 'com.atlassian.jira:jira-rest-java-client-core:5.2.4'
+    testImplementation('org.junit.jupiter:junit-jupiter:5.11.4')
+    testImplementation 'org.springframework:spring-test:6.2.3'
+    testImplementation "org.mockito:mockito-junit-jupiter:5.14.2"
+    testImplementation 'org.hamcrest:hamcrest:3.0'
+}
 
-    implementation 'net.oauth.core:oauth:20090617'
-    implementation 'net.oauth.core:oauth-httpclient4:20090913'
+sourceSets {
+    main {
+        java {
+            srcDirs "$buildDir/generated/src/main/java"
+            exclude("$buildDir/generated/src/main/java/com/epam/reportportal/api/jira/MyselfApi.java")
+        }
+    }
+}
 
-    implementation 'org.apache.tika:tika-core:1.14'
 
-    testImplementation 'org.springframework:spring-test:5.2.1.RELEASE'
-    testImplementation 'org.hamcrest:hamcrest-all:1.3'
-    testImplementation 'junit:junit:4.12'
-    testImplementation 'org.mockito:mockito-all:1.10.19'
+tasks.register('generateJiraApi', GenerateTask) {
+    // set latest available api version instead of specific one
+    ant.replaceregexp(match: '/rest/api/3', replace: '/rest/api/latest', flags: 'g', byline: false) {
+        fileset(dir: '.', includes: "src/main/resources/openapi/swagger-v3.v3.json")
+    }
+
+    generatorName.set("java")
+    inputSpec.set("$rootDir/src/main/resources/openapi/swagger-v3.v3.json")
+    outputDir.set("$buildDir/generated")
+    configFile.set("$rootDir/src/main/resources/openapi/config.json")
+    ignoreFileOverride = "${projectDir.path}/.openapi-generator-ignore"
+    skipOverwrite.set(true)
 }
 
 artifacts {
@@ -72,6 +99,7 @@ artifacts {
 }
 
 test {
+    useJUnitPlatform()
     jacocoTestReport {
         reports {
             xml.required = true
@@ -88,6 +116,7 @@ wrapper {
 generatePomFileForShadowPublication { pom.packaging = "jar" }
 
 jar {
+    processResources.exclude('openapi')
     manifest {
         attributes(
                 "Class-Path": configurations.compileClasspath.collect { it.getName() }.join(' '),
@@ -105,29 +134,8 @@ shadowJar {
     configurations = [project.configurations.compileClasspath]
     zip64 true
     dependencies {
-        include(dependency("com.atlassian.jira:jira-rest-java-client-api:.*"))
-        include(dependency("com.atlassian.jira:jira-rest-java-client-core:.*"))
-        include(dependency("com.atlassian.httpclient:atlassian-httpclient-api:.*"))
-        include(dependency("com.atlassian.httpclient:atlassian-httpclient-library:.*"))
-        include(dependency("com.atlassian.sal:sal-api:.*"))
-        include(dependency("com.atlassian.event:atlassian-event:.*"))
-        include(dependency("io.atlassian.util.concurrent:atlassian-util-concurrent:.*"))
-        include(dependency("io.atlassian.fugue:fugue:.*"))
-        include(dependency("org.apache.httpcomponents:httpasyncclient:.*"))
-        include(dependency("org.apache.httpcomponents:httpasyncclient-cache:.*"))
-        include(dependency("org.apache.httpcomponents:httpclient:.*"))
-        include(dependency("org.apache.httpcomponents:httpclient-cache:.*"))
-        include(dependency("org.apache.httpcomponents:httpcore:.*"))
-        include(dependency("org.apache.httpcomponents:httpcore-nio:.*"))
-        include(dependency("org.apache.httpcomponents:httpcore-mime:.*"))
-        include(dependency("org.glassfish.jersey.core:jersey-server:.*"))
-        include(dependency("org.glassfish.jersey.core:jersey-common:.*"))
         include(dependency("jakarta.ws.rs:jakarta.ws.rs-api:.*"))
-        //include(dependency("jakarta.annotation:jakarta.annotation-api:.*"))
         include(dependency("org.apache.tomcat:tomcat-annotations-api:.*"))
-        include(dependency("org.glassfish.hk2.external:jakarta.inject:.*"))
-        include(dependency("org.glassfish.hk2:osgi-resource-locator:.*"))
-        include(dependency("org.glassfish.jaxb:jaxb-runtime:.*"))
     }
 }
 
@@ -150,3 +158,6 @@ task assemblePlugin(type: Copy) {
 task assemblePlugins(type: Copy) {
     dependsOn subprojects.assemblePlugin
 }
+
+compileJava.dependsOn generateJiraApi
+
