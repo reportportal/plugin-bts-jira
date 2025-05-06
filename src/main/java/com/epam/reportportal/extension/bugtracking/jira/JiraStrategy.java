@@ -118,6 +118,11 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
   private static final String DOCUMENTATION_LINK =
       "https://reportportal.io/docs/plugins/AtlassianJiraServer";
 
+  private static final String NAME_FIELD = "name";
+
+  private static final String PLUGIN_NAME = "JIRA Server";
+
+
   private static final Logger LOGGER = LoggerFactory.getLogger(JiraStrategy.class);
 
   @Autowired
@@ -142,7 +147,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
   public Map<String, ?> getPluginParams() {
     Map<String, Object> params = new HashMap<>();
     params.put(DOCUMENTATION_LINK_FIELD, DOCUMENTATION_LINK);
-    params.put("name", "JIRA Server");
+    params.put(NAME_FIELD, PLUGIN_NAME);
     return params;
   }
 
