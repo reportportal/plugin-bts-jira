@@ -25,7 +25,17 @@ class GetIssueFieldsCommandTest extends BaseCommandTest {
 
   @ParameterizedTest
   @CsvSource(value = {
-      "Defect"
+      "Defect",
+      "Epic",
+      "Test",
+      "User Story",
+      "Technical Story",
+      "Spike",
+      "Defect",
+      "Sub-task",
+      "Task",
+      "Security issue",
+      "Cloud issue"
   })
   void getIssueFields(String issueType) {
     if (disabled()) {
