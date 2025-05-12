@@ -120,7 +120,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
 
   private static final String NAME_FIELD = "name";
 
-  private static final String PLUGIN_NAME = "JIRA Server";
+  private static final String PLUGIN_NAME = "Jira Server";
 
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JiraStrategy.class);
