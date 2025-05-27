@@ -21,18 +21,16 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import com.atlassian.jira.rest.client.api.JiraRestClient;
-import com.atlassian.jira.rest.client.api.domain.CimFieldInfo;
-import com.atlassian.jira.rest.client.api.domain.CustomFieldOption;
-import com.atlassian.jira.rest.client.api.domain.Issue;
-import com.atlassian.jira.rest.client.api.domain.IssueFieldId;
-import com.atlassian.jira.rest.client.api.domain.IssueType;
-import com.atlassian.jira.rest.client.api.domain.Page;
-import com.atlassian.jira.rest.client.api.domain.Project;
-import com.atlassian.jira.rest.client.api.domain.User;
-import com.atlassian.jira.rest.client.api.domain.input.ComplexIssueInputFieldValue;
-import com.atlassian.jira.rest.client.api.domain.input.IssueInput;
-import com.atlassian.jira.rest.client.api.domain.input.IssueInputBuilder;
+import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.ASSIGNEE_FIELD;
+
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeDetails;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.PageOfCreateMetaIssueTypeWithField;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
+import com.epam.reportportal.extension.bugtracking.jira.api.model.User;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
+import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
 import com.epam.reportportal.model.externalsystem.PostFormField;
 import com.epam.reportportal.model.externalsystem.PostTicketRQ;
 import com.epam.reportportal.model.externalsystem.Ticket;
@@ -40,20 +38,18 @@ import com.epam.reportportal.rules.commons.validation.BusinessRule;
 import com.epam.reportportal.rules.commons.validation.Suppliers;
 import com.epam.reportportal.rules.exception.ErrorType;
 import com.epam.ta.reportportal.commons.Predicates;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Streams;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.apache.commons.collections.CollectionUtils;
-import org.joda.time.format.DateTimeFormatter;
-import org.joda.time.format.ISODateTimeFormat;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +62,6 @@ import org.slf4j.LoggerFactory;
 public class JIRATicketUtils {
 
   private static final Logger LOGGER = LoggerFactory.getLogger(JIRATicketUtils.class);
-  public static final DateTimeFormatter JIRA_DATE_FORMATTER = ISODateTimeFormat.date();
 
   // Field format from UI calendar control
   public static final String JIRA_FORMAT = "yyyy-MM-dd";
@@ -74,37 +69,36 @@ public class JIRATicketUtils {
   private JIRATicketUtils() {
   }
 
-  public static Ticket toTicket(Issue input, String jiraUrl) {
+  public static Ticket toTicket(IssueBean jiraIssue, String jiraUrl) {
     Ticket ticket = new Ticket();
-    ticket.setId(input.getKey());
-    ticket.setSummary(input.getSummary());
-    ticket.setStatus(input.getStatus().getName());
-    ticket.setTicketUrl(stripEnd(jiraUrl, "/") + "/browse/" + input.getKey());
+    JsonNode jn = new ObjectMapper().valueToTree(jiraIssue);
+
+    ticket.setId(jiraIssue.getKey());
+    ticket.setSummary(jn.get("fields").get("summary").asText());
+    ticket.setStatus(jn.get("fields").get("status").get("name").asText());
+    ticket.setTicketUrl(stripEnd(jiraUrl, "/") + "/browse/" + jn.get("key").asText());
     return ticket;
   }
 
-  public static IssueInput toIssueInput(JiraRestClient client, Project jiraProject,
-      Optional<IssueType> issueType, PostTicketRQ ticketRQ,
+  public static IssueUpdateDetails toIssueInput(JiraRestClient client, Project jiraProject, IssueTypeDetails issueType, PostTicketRQ ticketRQ,
       JIRATicketDescriptionService descriptionService) {
     String userDefinedDescription = "";
-    IssueInputBuilder issueInputBuilder = new IssueInputBuilder(jiraProject, issueType.get());
-    Page<CimFieldInfo> fieldsInfoPage = client.getIssueClient()
-        .getCreateIssueMetaFields(jiraProject.getKey(), issueType.get().getId().toString(), null,
-            null
-        ).claim();
-    BusinessRule.expect(fieldsInfoPage.getValues().iterator().hasNext(), Predicates.equalTo(true))
-        .verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
-            String.format("Issue fields %s not found", issueType.get().getId().toString())
-        );
-    Map<String, CimFieldInfo> fieldsInfo = Streams.stream(fieldsInfoPage.getValues())
-        .collect(Collectors.toMap(CimFieldInfo::getId, Function.identity()));
-    List<PostFormField> fields = ticketRQ.getFields();
-    for (PostFormField one : fields) {
-      CimFieldInfo cimFieldInfo = fieldsInfo.get(one.getId());
+    IssueUpdateDetails issueUpdateDetails = new IssueUpdateDetails();
+
+    issueUpdateDetails.putFieldsItem("project", Map.entry("id", jiraProject.getId()));
+    issueUpdateDetails.putFieldsItem("issuetype", Map.entry("id", issueType.getId()));
+
+    PageOfCreateMetaIssueTypeWithField metaIssueTypePage = client.issuesApi()
+        .getCreateIssueMetaIssueTypeId(jiraProject.getId(), issueType.getId(), 0, 100);
+    var issueMetaFields = (List<Map<String, Object>>) metaIssueTypePage.getAdditionalProperties().get("values");
+    var fieldsMap = issueMetaFields.stream().collect(Collectors.toMap(k -> k.get("fieldId"), Function.identity()));
+
+    for (PostFormField one : ticketRQ.getFields()) {
+
       if (one.getIsRequired() && CollectionUtils.isEmpty(one.getValue())) {
-        BusinessRule.fail().withError(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
-            Suppliers.formattedSupplier("Required parameter '{}' is empty", one.getFieldName())
-        );
+        BusinessRule.fail()
+            .withError(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+                Suppliers.formattedSupplier("Required parameter '{}' is empty", one.getFieldName()));
       }
 
       if (!checkField(one)) {
@@ -113,108 +107,110 @@ public class JIRATicketUtils {
 
       // Skip issuetype and project fields cause got them in
       // issueInputBuilder already
-      if (one.getId().equalsIgnoreCase(IssueFieldId.ISSUE_TYPE_FIELD.id) || one.getId()
-          .equalsIgnoreCase(IssueFieldId.PROJECT_FIELD.id)) {
+      if (one.getId().equalsIgnoreCase(IssueField.ISSUE_TYPE_FIELD.value) || one.getId().equalsIgnoreCase(IssueField.PROJECT_FIELD.value)) {
         continue;
       }
 
-      if (one.getId().equalsIgnoreCase(IssueFieldId.DESCRIPTION_FIELD.id)) {
+      if (one.getId().equalsIgnoreCase(IssueField.DESCRIPTION_FIELD.getValue())) {
         userDefinedDescription = one.getValue().get(0);
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.SUMMARY_FIELD.id)) {
-        issueInputBuilder.setSummary(one.getValue().get(0));
+      if (one.getId().equalsIgnoreCase(IssueField.SUMMARY_FIELD.value)) {
+        issueUpdateDetails.putFieldsItem(IssueField.SUMMARY_FIELD.value, one.getValue().get(0));
         continue;
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.PRIORITY_FIELD.id)) {
-        if (null != IssuePriority.findByName(one.getValue().get(0))) {
-          issueInputBuilder.setPriorityId(
-              IssuePriority.findByName(one.getValue().get(0)).getValue());
+      if (one.getId().equalsIgnoreCase(IssueField.PRIORITY_FIELD.value)) {
+        if (IssuePriority.findByName(one.getValue().get(0)) != null) {
+          issueUpdateDetails.putFieldsItem(IssueField.PRIORITY_FIELD.value, Map.entry("name", one.getValue().get(0)));
         }
         continue;
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.COMPONENTS_FIELD.id)) {
-        issueInputBuilder.setComponentsNames(one.getValue());
+      if (one.getId().equalsIgnoreCase(IssueField.COMPONENTS_FIELD.value)) {
+        var names = one.getValue().stream().map(version -> Map.entry("name", version)).toList();
+        issueUpdateDetails.putFieldsItem(IssueField.COMPONENTS_FIELD.getValue(), names);
         continue;
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.ASSIGNEE_FIELD.id)) {
-        issueInputBuilder.setAssigneeName(one.getValue().get(0));
+      if (one.getId().equalsIgnoreCase(ASSIGNEE_FIELD.getValue())) {
+        issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("name", one.getValue().get(0)));
         continue;
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.REPORTER_FIELD.id)) {
-        issueInputBuilder.setReporterName(one.getValue().get(0));
+      if (one.getId().equalsIgnoreCase(IssueField.REPORTER_FIELD.value)) {
+        issueUpdateDetails.putFieldsItem(IssueField.REPORTER_FIELD.value, Map.entry("name", one.getValue().get(0)));
         continue;
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.AFFECTS_VERSIONS_FIELD.id)) {
-        issueInputBuilder.setAffectedVersionsNames(one.getValue());
+      if (one.getId().equalsIgnoreCase(IssueField.AFFECTS_VERSIONS_FIELD.value)) {
+        var versions = one.getValue().stream().map(version -> Map.entry("name", version)).toList();
+        issueUpdateDetails.putFieldsItem(IssueField.AFFECTS_VERSIONS_FIELD.value, versions);
         continue;
       }
-      if (one.getId().equalsIgnoreCase(IssueFieldId.FIX_VERSIONS_FIELD.id)) {
-        issueInputBuilder.setFixVersionsNames(one.getValue());
+      if (one.getId().equalsIgnoreCase(IssueField.FIX_VERSIONS_FIELD.value)) {
+        var versions = one.getValue().stream().map(version -> Map.entry("name", version)).toList();
+        issueUpdateDetails.putFieldsItem(IssueField.FIX_VERSIONS_FIELD.value, versions);
+        continue;
+      }
+      if (one.getId().equalsIgnoreCase(IssueField.PARENT_FIELD.value) && !one.getValue().isEmpty()) {
+        issueUpdateDetails.putFieldsItem(IssueField.PARENT_FIELD.value, Map.entry("key", one.getValue().get(0)));
         continue;
       }
 
+      var cimFieldInfo = fieldsMap.get(one.getId());
       // Arrays and fields with 'allowedValues' handler
-      if (null != cimFieldInfo.getAllowedValues()) {
+
+      if (cimFieldInfo.get("allowedValues") != null) {
         try {
-          List<ComplexIssueInputFieldValue> arrayOfValues = Lists.newArrayList();
-          for (Object o : cimFieldInfo.getAllowedValues()) {
-            if (o instanceof CustomFieldOption) {
-              CustomFieldOption cfo = (CustomFieldOption) o;
-              if (one.getValue().contains(cfo.getValue())) {
-                arrayOfValues.add(
-                    ComplexIssueInputFieldValue.with("id", String.valueOf(cfo.getId())));
-              }
+          var allowedValues = ((List<Map<String, Object>>) cimFieldInfo.get("allowedValues"));
+          List<Object> arrayOfValues = new ArrayList<>();
+          for (Object o : allowedValues) {
+            JsonNode jn = new ObjectMapper().valueToTree(o);
+            if (isCustomField(jn) && one.getValue().contains(jn.get("value").asText())) {
+              arrayOfValues.add(Map.entry("id", jn.get("id").asText()));
             }
           }
           if (one.getFieldType().equalsIgnoreCase(IssueFieldType.ARRAY.name)) {
-            issueInputBuilder.setFieldValue(one.getId(), arrayOfValues);
+            issueUpdateDetails.putFieldsItem(one.getId(), arrayOfValues);
           } else {
-            issueInputBuilder.setFieldValue(one.getId(), arrayOfValues.get(0));
+            issueUpdateDetails.putFieldsItem(one.getId(), arrayOfValues.get(0));
           }
         } catch (Exception e) {
           LOGGER.error(e.getMessage(), e);
-          issueInputBuilder.setFieldValue(one.getId(), "ReportPortal autofield");
+          issueUpdateDetails.putFieldsItem(one.getId(), "ReportPortal autofield");
         }
       } else {
         if (one.getFieldType().equalsIgnoreCase(IssueFieldType.ARRAY.name)) {
-          if (one.getId().equalsIgnoreCase(IssueFieldId.LABELS_FIELD.id)) {
-            issueInputBuilder.setFieldValue(one.getId(), processLabels(one.getValue().get(0)));
+          if (one.getId().equalsIgnoreCase(IssueField.LABELS_FIELD.value)) {
+            issueUpdateDetails.putFieldsItem(one.getId(), processLabels(one.getValue().get(0)));
           } else {
-            issueInputBuilder.setFieldValue(one.getId(), one.getValue());
+            issueUpdateDetails.putFieldsItem(one.getId(), one.getValue());
           }
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.NUMBER.name)) {
-          issueInputBuilder.setFieldValue(one.getId(), Long.valueOf(one.getValue().get(0)));
+          issueUpdateDetails.putFieldsItem(one.getId(), Long.valueOf(one.getValue().get(0)));
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.USER.name)) {
           if (!one.getValue().get(0).equals("")) {
             // TODO create user cache (like for projects) for JIRA
             // 'user' type fields
-            User jiraUser = client.getUserClient().getUser(one.getValue().get(0)).claim();
+            User jiraUser = client.usersApi().getUser(null, one.getValue().get(0), null, null);
             // FIXME change validator as common validate method for
             // fields
-            BusinessRule.expect(jiraUser, Predicates.notNull())
-                .verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION, Suppliers.formattedSupplier(
-                    "Value for '{}' field with 'user' type wasn't found in JIRA",
-                    one.getValue().get(0)
-                ));
-            issueInputBuilder.setFieldValue(one.getId(), jiraUser);
+            BusinessRule.expect(jiraUser, Predicates.notNull()).verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
+                Suppliers.formattedSupplier("Value for '{}' field with 'user' type wasn't found in JIRA", one.getValue().get(0)));
+            issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("id", jiraUser.getAccountId()));
           }
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.DATE.name)) {
           try {
             SimpleDateFormat format = new SimpleDateFormat(JIRA_FORMAT);
             Date fieldValue = format.parse(one.getValue().get(0));
-            issueInputBuilder.setFieldValue(
-                one.getId(), JIRA_DATE_FORMATTER.print(fieldValue.getTime()));
+            issueUpdateDetails.putFieldsItem(one.getId(), fieldValue.toInstant());
           } catch (Exception e) {
             LOGGER.error(e.getMessage(), e);
           }
         } else {
-          issueInputBuilder.setFieldValue(one.getId(), one.getValue().get(0));
+          issueUpdateDetails.putFieldsItem(one.getId(), one.getValue().get(0));
         }
       }
     }
-    issueInputBuilder.setDescription(
+    issueUpdateDetails.putFieldsItem(IssueField.DESCRIPTION_FIELD.getValue(),
         userDefinedDescription.concat("\n").concat(descriptionService.getDescription(ticketRQ)));
-    return issueInputBuilder.build();
+
+    return issueUpdateDetails;
   }
 
   /**
@@ -266,5 +262,9 @@ public class JIRATicketUtils {
       trimmed = str.substring(0, str.length() - suffix.length());
     }
     return trimmed;
+  }
+
+  public static boolean isCustomField(JsonNode allowedValue) {
+    return allowedValue.get("self").asText().contains("/customFieldOption/");
   }
 }

@@ -1,0 +1,16 @@
+docs/*.md
+api/*.yaml
+
+
+## Exclude APIs
+/**/MyselfApi.java
+/**/Bulk**Api.java
+/**/Work**Api.java
+/**/Screens**Api.java
+/**/Project**Api.java
+
+## Exclude broken model
+/**/ApprovalConfiguration.java
+
+#Force generate
+!/**/ProjectsApi.java
