@@ -75,7 +75,7 @@ public class JIRATicketUtils {
 
     ticket.setId(jiraIssue.getKey());
     ticket.setSummary(jn.get("fields").get("summary").asText());
-    ticket.setStatus(jn.get("fields").get("status").get("statusCategory").get("name").asText());
+    ticket.setStatus(jn.get("fields").get("status").get("name").asText());
     ticket.setTicketUrl(stripEnd(jiraUrl, "/") + "/browse/" + jn.get("key").asText());
     return ticket;
   }
