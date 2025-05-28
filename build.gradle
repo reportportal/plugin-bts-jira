@@ -22,8 +22,8 @@ apply from: scriptsUrl + '/release-fat.gradle'
 apply from: scriptsUrl + '/signing.gradle'
 
 repositories {
-    maven { url "https://m2proxy.atlassian.com/repository/public" }
     mavenCentral { url "https://repo1.maven.org/maven2" }
+    maven { url "https://m2proxy.atlassian.com/repository/public" }
 
     if (!releaseMode) {
         maven { url 'https://jitpack.io' }
@@ -94,6 +94,12 @@ tasks.register('generateJiraApi', GenerateTask) {
     skipOverwrite.set(true)
 }
 
+tasks.register('revertApiReplacement', GenerateTask) {
+    ant.replaceregexp(match: '/rest/api/latest', replace: '/rest/api/3', flags: 'g', byline: false) {
+        fileset(dir: '.', includes: "src/main/resources/openapi/swagger-v3.v3.json")
+    }
+}
+
 artifacts {
     archives shadowJar
 }
@@ -160,4 +166,5 @@ task assemblePlugins(type: Copy) {
 }
 
 compileJava.dependsOn generateJiraApi
+revertApiReplacement.dependsOn generateJiraApi
 
