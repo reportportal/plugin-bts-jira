@@ -81,23 +81,12 @@ sourceSets {
 
 
 tasks.register('generateJiraApi', GenerateTask) {
-    // set latest available api version instead of specific one
-    ant.replaceregexp(match: '/rest/api/3', replace: '/rest/api/latest', flags: 'g', byline: false) {
-        fileset(dir: '.', includes: "src/main/resources/openapi/swagger-v3.v3.json")
-    }
-
     generatorName.set("java")
     inputSpec.set("$rootDir/src/main/resources/openapi/swagger-v3.v3.json")
     outputDir.set("$buildDir/generated")
     configFile.set("$rootDir/src/main/resources/openapi/config.json")
     ignoreFileOverride = "${projectDir.path}/.openapi-generator-ignore"
     skipOverwrite.set(true)
-}
-
-tasks.register('revertApiReplacement', GenerateTask) {
-    ant.replaceregexp(match: '/rest/api/latest', replace: '/rest/api/3', flags: 'g', byline: false) {
-        fileset(dir: '.', includes: "src/main/resources/openapi/swagger-v3.v3.json")
-    }
 }
 
 artifacts {
@@ -166,5 +155,3 @@ task assemblePlugins(type: Copy) {
 }
 
 compileJava.dependsOn generateJiraApi
-revertApiReplacement.dependsOn generateJiraApi
-
