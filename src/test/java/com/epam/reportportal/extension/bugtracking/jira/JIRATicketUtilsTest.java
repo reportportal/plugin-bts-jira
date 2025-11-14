@@ -9,6 +9,7 @@ public class JIRATicketUtilsTest {
 
   @Test
   public void stripEnd() {
-    MatcherAssert.assertThat("Incorrect truncation", JIRATicketUtils.stripEnd("hello world", "world"), CoreMatchers.equalTo("hello "));
+    MatcherAssert.assertThat("Incorrect truncation", JIRATicketUtils.stripEnd("hello world", "world"),
+        CoreMatchers.equalTo("hello "));
   }
 }

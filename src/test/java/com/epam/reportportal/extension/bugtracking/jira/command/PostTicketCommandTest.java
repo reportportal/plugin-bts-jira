@@ -25,12 +25,12 @@ import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
 import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
-import com.epam.reportportal.model.externalsystem.PostTicketRQ;
-import com.epam.reportportal.model.externalsystem.Ticket;
-import com.epam.ta.reportportal.binary.DataStoreService;
-import com.epam.ta.reportportal.dao.LogRepository;
-import com.epam.ta.reportportal.dao.TestItemRepository;
-import com.epam.ta.reportportal.entity.item.TestItem;
+import com.epam.reportportal.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.infrastructure.model.externalsystem.Ticket;
+import com.epam.reportportal.infrastructure.persistence.binary.DataStoreService;
+import com.epam.reportportal.infrastructure.persistence.dao.LogRepository;
+import com.epam.reportportal.infrastructure.persistence.dao.TestItemRepository;
+import com.epam.reportportal.infrastructure.persistence.entity.item.TestItem;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import java.util.HashMap;
 import java.util.Map;

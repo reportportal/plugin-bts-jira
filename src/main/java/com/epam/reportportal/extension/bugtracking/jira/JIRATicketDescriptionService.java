@@ -21,23 +21,23 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import static com.epam.ta.reportportal.commons.EntityUtils.INSTANT_TO_LDT;
+import static com.epam.reportportal.infrastructure.persistence.commons.EntityUtils.INSTANT_TO_LDT;
 import static java.util.Optional.ofNullable;
 
-import com.epam.reportportal.model.externalsystem.PostTicketRQ;
-import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.reportportal.rules.exception.ReportPortalException;
-import com.epam.ta.reportportal.dao.LogRepository;
-import com.epam.ta.reportportal.dao.TestItemRepository;
-import com.epam.ta.reportportal.entity.attachment.Attachment;
-import com.epam.ta.reportportal.entity.item.TestItem;
-import com.epam.ta.reportportal.entity.log.Log;
+import com.epam.reportportal.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.infrastructure.persistence.dao.LogRepository;
+import com.epam.reportportal.infrastructure.persistence.dao.TestItemRepository;
+import com.epam.reportportal.infrastructure.persistence.entity.attachment.Attachment;
+import com.epam.reportportal.infrastructure.persistence.entity.item.TestItem;
+import com.epam.reportportal.infrastructure.persistence.entity.log.Log;
+import com.epam.reportportal.infrastructure.rules.exception.ErrorType;
+import com.epam.reportportal.infrastructure.rules.exception.ReportPortalException;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.Collections;
 import java.util.List;
-import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.MapUtils;
+import org.apache.commons.collections4.CollectionUtils;
+import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
@@ -53,6 +53,7 @@ import org.slf4j.LoggerFactory;
  * @author Dzmitry_Kavalets
  */
 public class JIRATicketDescriptionService {
+
   public static final String JIRA_MARKUP_LINE_BREAK = "\\\\ ";
   public static final String BACK_LINK_HEADER = "h3.*Back link to Report Portal:*";
   public static final String BACK_LINK_PATTERN = "[Link to defect|%s]%n";

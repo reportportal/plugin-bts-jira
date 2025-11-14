@@ -17,8 +17,8 @@
 package com.epam.reportportal.extension.bugtracking.jira.utils;
 
 
-import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.reportportal.rules.exception.ReportPortalException;
+import com.epam.reportportal.infrastructure.rules.exception.ErrorType;
+import com.epam.reportportal.infrastructure.rules.exception.ReportPortalException;
 import java.util.Arrays;
 
 public enum IssueField {
