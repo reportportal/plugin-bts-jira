@@ -30,12 +30,6 @@ repositories {
     }
 }
 
-dependencyManagement {
-    imports {
-        mavenBom(releaseMode ? 'com.epam.reportportal:commons-bom:' + getProperty('bom.version') : 'com.epam.reportportal:commons-bom:5.14.2')
-    }
-}
-
 java {
     sourceCompatibility = JavaVersion.VERSION_21
     targetCompatibility = JavaVersion.VERSION_21
@@ -48,8 +42,8 @@ dependencies {
         implementation 'com.epam.reportportal:service-api'
         annotationProcessor 'com.epam.reportportal:service-api'
     } else {
-        implementation 'com.github.reportportal:service-api:9b01fc0'
-        annotationProcessor 'com.github.reportportal:service-api:9b01fc0'
+        implementation 'com.github.reportportal:service-api:3e34a90'
+        annotationProcessor 'com.github.reportportal:service-api:3e34a90'
     }
     implementation 'jakarta.el:jakarta.el-api:6.0.1'
     implementation 'org.glassfish:jakarta.el:4.0.2'
