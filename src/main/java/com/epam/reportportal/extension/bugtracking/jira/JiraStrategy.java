@@ -294,7 +294,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint, BtsExtension {
       throw e;
     } catch (Exception e) {
       LOGGER.error(e.getMessage(), e);
-      throw new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, e.getMessage());
+      throw new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION);
     }
   }
 
