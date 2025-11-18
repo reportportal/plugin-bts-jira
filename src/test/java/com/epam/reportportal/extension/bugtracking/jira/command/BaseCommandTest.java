@@ -22,9 +22,9 @@ import static org.mockito.Mockito.lenient;
 
 import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
 import com.epam.reportportal.extension.bugtracking.jira.TestConf;
-import com.epam.ta.reportportal.dao.ProjectRepository;
-import com.epam.ta.reportportal.entity.integration.Integration;
-import com.epam.ta.reportportal.entity.integration.IntegrationParams;
+import com.epam.reportportal.infrastructure.persistence.dao.ProjectRepository;
+import com.epam.reportportal.infrastructure.persistence.entity.integration.Integration;
+import com.epam.reportportal.infrastructure.persistence.entity.integration.IntegrationParams;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;

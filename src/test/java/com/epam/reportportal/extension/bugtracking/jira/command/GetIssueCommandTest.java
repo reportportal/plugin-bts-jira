@@ -18,7 +18,7 @@ package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.epam.reportportal.model.externalsystem.Ticket;
+import com.epam.reportportal.infrastructure.model.externalsystem.Ticket;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
@@ -29,7 +29,8 @@ class GetIssueCommandTest extends BaseCommandTest {
   @Test
   @DisabledIf("disabled")
   void getIssueCommand() {
-    Optional<Ticket> response = jiraStrategy.getTicket(String.valueOf((JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD))), INTEGRATION);
+    Optional<Ticket> response = jiraStrategy.getTicket(String.valueOf((JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD))),
+        INTEGRATION);
 
     assertFalse(response.isEmpty());
   }

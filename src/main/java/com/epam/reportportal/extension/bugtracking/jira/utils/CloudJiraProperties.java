@@ -15,7 +15,7 @@
  */
 package com.epam.reportportal.extension.bugtracking.jira.utils;
 
-import com.epam.ta.reportportal.entity.integration.IntegrationParams;
+import com.epam.reportportal.infrastructure.persistence.entity.integration.IntegrationParams;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -27,30 +27,30 @@ import lombok.Getter;
 @Getter
 public enum CloudJiraProperties {
 
-	EMAIL("email"),
-	PROJECT("project"),
-	API_TOKEN("apiToken"),
-	URL("url");
+  EMAIL("email"),
+  PROJECT("project"),
+  API_TOKEN("apiToken"),
+  URL("url");
 
-	private final String name;
+  private final String name;
 
-	CloudJiraProperties(String name) {
-		this.name = name;
-	}
+  CloudJiraProperties(String name) {
+    this.name = name;
+  }
 
-	public Optional<String> getParam(Map<String, Object> params) {
-		return Optional.ofNullable(params.get(this.name)).map(String::valueOf);
-	}
+  public Optional<String> getParam(Map<String, Object> params) {
+    return Optional.ofNullable(params.get(this.name)).map(String::valueOf);
+  }
 
-	public Optional<String> getParam(IntegrationParams params) {
-		return Optional.ofNullable(params.getParams().get(this.name)).map(o -> (String) o);
-	}
+  public Optional<String> getParam(IntegrationParams params) {
+    return Optional.ofNullable(params.getParams().get(this.name)).map(o -> (String) o);
+  }
 
-	public void setParam(IntegrationParams params, String value) {
-		if (null == params.getParams()) {
-			params.setParams(new HashMap<>());
-		}
-		params.getParams().put(this.name, value);
-	}
+  public void setParam(IntegrationParams params, String value) {
+    if (null == params.getParams()) {
+      params.setParams(new HashMap<>());
+    }
+    params.getParams().put(this.name, value);
+  }
 
 }

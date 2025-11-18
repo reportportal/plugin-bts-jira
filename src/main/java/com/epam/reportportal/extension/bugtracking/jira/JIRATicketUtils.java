@@ -31,13 +31,13 @@ import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.User;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
-import com.epam.reportportal.model.externalsystem.PostFormField;
-import com.epam.reportportal.model.externalsystem.PostTicketRQ;
-import com.epam.reportportal.model.externalsystem.Ticket;
-import com.epam.reportportal.rules.commons.validation.BusinessRule;
-import com.epam.reportportal.rules.commons.validation.Suppliers;
-import com.epam.reportportal.rules.exception.ErrorType;
-import com.epam.ta.reportportal.commons.Predicates;
+import com.epam.reportportal.infrastructure.model.externalsystem.PostFormField;
+import com.epam.reportportal.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.infrastructure.model.externalsystem.Ticket;
+import com.epam.reportportal.infrastructure.persistence.commons.Predicates;
+import com.epam.reportportal.infrastructure.rules.commons.validation.BusinessRule;
+import com.epam.reportportal.infrastructure.rules.commons.validation.Suppliers;
+import com.epam.reportportal.infrastructure.rules.exception.ErrorType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -49,7 +49,7 @@ import java.util.Map;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
-import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -80,7 +80,8 @@ public class JIRATicketUtils {
     return ticket;
   }
 
-  public static IssueUpdateDetails toIssueInput(JiraRestClient client, Project jiraProject, IssueTypeDetails issueType, PostTicketRQ ticketRQ,
+  public static IssueUpdateDetails toIssueInput(JiraRestClient client, Project jiraProject, IssueTypeDetails issueType,
+      PostTicketRQ ticketRQ,
       JIRATicketDescriptionService descriptionService) {
     String userDefinedDescription = "";
     IssueUpdateDetails issueUpdateDetails = new IssueUpdateDetails();
@@ -107,7 +108,8 @@ public class JIRATicketUtils {
 
       // Skip issuetype and project fields cause got them in
       // issueInputBuilder already
-      if (one.getId().equalsIgnoreCase(IssueField.ISSUE_TYPE_FIELD.value) || one.getId().equalsIgnoreCase(IssueField.PROJECT_FIELD.value)) {
+      if (one.getId().equalsIgnoreCase(IssueField.ISSUE_TYPE_FIELD.value) || one.getId()
+          .equalsIgnoreCase(IssueField.PROJECT_FIELD.value)) {
         continue;
       }
 
@@ -191,7 +193,8 @@ public class JIRATicketUtils {
             // FIXME change validator as common validate method for
             // fields
             BusinessRule.expect(jiraUser, Predicates.notNull()).verify(ErrorType.UNABLE_INTERACT_WITH_INTEGRATION,
-                Suppliers.formattedSupplier("Value for '{}' field with 'user' type wasn't found in JIRA", one.getValue().get(0)));
+                Suppliers.formattedSupplier("Value for '{}' field with 'user' type wasn't found in JIRA",
+                    one.getValue().get(0)));
             issueUpdateDetails.putFieldsItem(ASSIGNEE_FIELD.getValue(), Map.entry("id", jiraUser.getAccountId()));
           }
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.DATE.name)) {

@@ -21,9 +21,9 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import com.epam.reportportal.model.externalsystem.PostTicketRQ;
-import com.epam.ta.reportportal.dao.LogRepository;
-import com.epam.ta.reportportal.dao.TestItemRepository;
+import com.epam.reportportal.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.infrastructure.persistence.dao.LogRepository;
+import com.epam.reportportal.infrastructure.persistence.dao.TestItemRepository;
 import java.util.HashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
@@ -33,7 +33,8 @@ import org.mockito.Mockito;
 @Disabled
 public class TicketDescriptionServiceTest {
 
-  private JIRATicketDescriptionService descriptionService = new JIRATicketDescriptionService(Mockito.mock(LogRepository.class),
+  private JIRATicketDescriptionService descriptionService = new JIRATicketDescriptionService(
+      Mockito.mock(LogRepository.class),
       Mockito.mock(TestItemRepository.class)
   );
 
