@@ -1,6 +1,7 @@
 name: Build
 
 on:
+  workflow_dispatch:
   pull_request:
   push:
     branches:
@@ -11,17 +12,23 @@ on:
       - README.md
       - gradle.properties
 
+permissions:
+  id-token: write
+  contents: read
+  actions: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v5
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
+          distribution: 'temurin'
           java-version: '21'
 
       - name: Grant execute permission for gradlew
@@ -35,6 +42,21 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build with Gradle
-        id: build
-        run: |
-          ./gradlew build
+        run: ./gradlew build --stacktrace
+
+      - name: Upload built jars
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-libs
+          path: build/libs/*.jar
+          retention-days: 1
+
+  upload:
+    needs: build
+    if: github.ref_name == 'develop' || startsWith(github.ref_name, 'feature/')
+    uses: reportportal/.github/.github/workflows/upload-plugin-artifact.yaml@main
+    with:
+      plugin_name: ${{ github.event.repository.name }}
+      branch_name: ${{ github.ref_name }}
+      run_number: "${{ github.run_number }}"
+    secrets: inherit

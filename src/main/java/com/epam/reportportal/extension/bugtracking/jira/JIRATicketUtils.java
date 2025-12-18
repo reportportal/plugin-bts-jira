@@ -176,11 +176,7 @@ public class JIRATicketUtils {
         }
       } else {
         if (one.getFieldType().equalsIgnoreCase(IssueFieldType.ARRAY.name)) {
-          if (one.getId().equalsIgnoreCase(IssueField.LABELS_FIELD.value)) {
-            issueUpdateDetails.putFieldsItem(one.getId(), processLabels(one.getValue().get(0)));
-          } else {
-            issueUpdateDetails.putFieldsItem(one.getId(), one.getValue());
-          }
+          issueUpdateDetails.putFieldsItem(one.getId(), one.getValue());
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.NUMBER.name)) {
           issueUpdateDetails.putFieldsItem(one.getId(), Long.valueOf(one.getValue().get(0)));
         } else if (one.getFieldType().equalsIgnoreCase(IssueFieldType.USER.name)) {
@@ -211,16 +207,6 @@ public class JIRATicketUtils {
         userDefinedDescription.concat("\n").concat(descriptionService.getDescription(ticketRQ)));
 
     return issueUpdateDetails;
-  }
-
-  /**
-   * Processing labels for JIRA through spaces split
-   *
-   * @param values
-   * @return
-   */
-  private static List<String> processLabels(String values) {
-    return Stream.of(values.split(" ")).collect(Collectors.toList());
   }
 
   /**

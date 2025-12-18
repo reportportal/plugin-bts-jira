@@ -44,15 +44,13 @@ java {
 ext['spring-boot.version'] = "${springBootVersion}"
 
 dependencies {
-    if (releaseMode) {
-        implementation 'com.epam.reportportal:commons-dao'
-        implementation 'com.epam.reportportal:plugin-api'
-        annotationProcessor 'com.epam.reportportal:plugin-api'
-    } else {
-        implementation 'com.epam.reportportal:commons-dao'
-        implementation 'com.epam.reportportal:plugin-api'
-        annotationProcessor 'com.epam.reportportal:plugin-api'
+    implementation 'com.github.reportportal:commons-dao:5.15.0'
+    implementation('com.github.reportportal:plugin-api:5.15.0') {
+        exclude group: 'com.github.reportportal', module: 'commons-dao'
     }
+    annotationProcessor 'com.github.reportportal:plugin-api:5.15.0'
+
+
     implementation("org.apache.httpcomponents.client5:httpclient5:5.4.2") // supports gzip encoding
     implementation "org.hibernate.validator:hibernate-validator:8.0.2.Final"
     implementation 'jakarta.el:jakarta.el-api:6.0.1'
