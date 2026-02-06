@@ -3,6 +3,7 @@ plugins {
     id 'java'
     id 'jacoco'
     id "org.openapi.generator" version "7.12.0"
+    id 'com.gradleup.shadow' version '9.3.1'
 }
 
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
@@ -22,17 +23,17 @@ apply from: scriptsUrl + '/release-fat.gradle'
 apply from: scriptsUrl + '/signing.gradle'
 
 repositories {
-    mavenCentral { url "https://repo1.maven.org/maven2" }
-    maven { url "https://m2proxy.atlassian.com/repository/public" }
+    mavenCentral { url = "https://repo1.maven.org/maven2" }
+    maven { url = "https://m2proxy.atlassian.com/repository/public" }
 
     if (!releaseMode) {
-        maven { url 'https://jitpack.io' }
+        maven { url = 'https://jitpack.io' }
     }
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_21
-    targetCompatibility = JavaVersion.VERSION_21
+    sourceCompatibility = JavaVersion.VERSION_25
+    targetCompatibility = JavaVersion.VERSION_25
 }
 
 ext['spring-boot.version'] = "${springBootVersion}"
@@ -42,8 +43,8 @@ dependencies {
         implementation 'com.epam.reportportal:service-api'
         annotationProcessor 'com.epam.reportportal:service-api'
     } else {
-        implementation 'com.github.reportportal:service-api:3e34a90'
-        annotationProcessor 'com.github.reportportal:service-api:3e34a90'
+        implementation 'com.github.reportportal:service-api:7044a29'
+        annotationProcessor 'com.github.reportportal:service-api:7044a29'
     }
     implementation 'jakarta.el:jakarta.el-api:6.0.1'
     implementation 'org.glassfish:jakarta.el:4.0.2'
@@ -56,8 +57,9 @@ dependencies {
 
     testImplementation('org.junit.jupiter:junit-jupiter:5.11.4')
     testImplementation 'org.springframework:spring-test:6.2.3'
-    testImplementation "org.mockito:mockito-junit-jupiter:5.14.2"
+    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
     testImplementation 'org.hamcrest:hamcrest:3.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 sourceSets {
@@ -79,9 +81,7 @@ tasks.register('generateJiraApi', GenerateTask) {
     skipOverwrite.set(true)
 }
 
-artifacts {
-    archives shadowJar
-}
+assemble.dependsOn shadowJar
 
 test {
     useJUnitPlatform()
@@ -95,7 +95,7 @@ test {
 build.dependsOn jacocoTestReport
 
 wrapper {
-    gradleVersion = '8.10.2'
+    gradleVersion = '9.3.1'
 }
 
 generatePomFileForShadowPublication { pom.packaging = "jar" }
@@ -117,7 +117,7 @@ jar {
 
 shadowJar {
     configurations = [project.configurations.compileClasspath]
-    zip64 true
+    zip64 = true
     dependencies {
         include(dependency("jakarta.ws.rs:jakarta.ws.rs-api:.*"))
         include(dependency("org.apache.tomcat:tomcat-annotations-api:.*"))
