@@ -13,7 +13,7 @@ project.ext {
     dependencyRepos = ["plugin-api", "commons-bom"]
     releaseMode = project.hasProperty("releaseMode")
     pluginID = "jira"
-    pluginsDir = "$buildDir/plugins"
+    pluginsDir = layout.buildDirectory.dir("plugins").get().asFile.path
 }
 
 def scriptsUrl = 'https://raw.githubusercontent.com/reportportal/gradle-scripts/' +
@@ -65,8 +65,8 @@ dependencies {
 sourceSets {
     main {
         java {
-            srcDirs "$buildDir/generated/src/main/java"
-            exclude("$buildDir/generated/src/main/java/com/epam/reportportal/api/jira/MyselfApi.java")
+            srcDirs layout.buildDirectory.dir("generated/src/main/java").get().asFile.path
+            exclude("${layout.buildDirectory.dir("generated/src/main/java").get().asFile.path}/com/epam/reportportal/api/jira/MyselfApi.java")
         }
     }
 }
@@ -75,7 +75,7 @@ sourceSets {
 tasks.register('generateJiraApi', GenerateTask) {
     generatorName.set("java")
     inputSpec.set("$rootDir/src/main/resources/openapi/swagger-v3.v3.json")
-    outputDir.set("$buildDir/generated")
+    outputDir.set(layout.buildDirectory.dir("generated").get().asFile.path)
     configFile.set("$rootDir/src/main/resources/openapi/config.json")
     ignoreFileOverride = "${projectDir.path}/.openapi-generator-ignore"
     skipOverwrite.set(true)
