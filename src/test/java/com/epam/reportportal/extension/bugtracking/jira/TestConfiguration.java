@@ -18,7 +18,7 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import com.epam.reportportal.core.configs.DatabaseConfiguration;
+import com.epam.reportportal.base.core.configs.DatabaseConfiguration;
 import org.springframework.boot.autoconfigure.EnableAutoConfiguration;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.ComponentScan;
