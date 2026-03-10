@@ -18,7 +18,7 @@ package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 
-import com.epam.reportportal.infrastructure.model.externalsystem.Ticket;
+import com.epam.reportportal.base.infrastructure.model.externalsystem.Ticket;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;

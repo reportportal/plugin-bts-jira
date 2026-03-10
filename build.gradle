@@ -24,6 +24,7 @@ apply from: scriptsUrl + '/signing.gradle'
 
 repositories {
     mavenCentral { url = "https://repo1.maven.org/maven2" }
+    maven { url = "https://build.shibboleth.net/nexus/content/repositories/releases/" }
     maven { url = "https://m2proxy.atlassian.com/repository/public" }
 
     if (!releaseMode) {
@@ -43,8 +44,8 @@ dependencies {
         implementation 'com.epam.reportportal:service-api'
         annotationProcessor 'com.epam.reportportal:service-api'
     } else {
-        implementation 'com.github.reportportal:service-api:7044a29'
-        annotationProcessor 'com.github.reportportal:service-api:7044a29'
+        implementation 'com.github.reportportal:service-api:e81b4f6'
+        annotationProcessor 'com.github.reportportal:service-api:e81b4f6'
     }
     implementation 'jakarta.el:jakarta.el-api:6.0.1'
     implementation 'org.glassfish:jakarta.el:4.0.2'

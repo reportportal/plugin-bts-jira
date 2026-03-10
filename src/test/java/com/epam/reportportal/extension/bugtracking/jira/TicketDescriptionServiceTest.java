@@ -21,9 +21,9 @@
 
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import com.epam.reportportal.infrastructure.model.externalsystem.PostTicketRQ;
-import com.epam.reportportal.infrastructure.persistence.dao.LogRepository;
-import com.epam.reportportal.infrastructure.persistence.dao.TestItemRepository;
+import com.epam.reportportal.base.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.base.infrastructure.persistence.dao.LogRepository;
+import com.epam.reportportal.base.infrastructure.persistence.dao.TestItemRepository;
 import java.util.HashMap;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Disabled;
