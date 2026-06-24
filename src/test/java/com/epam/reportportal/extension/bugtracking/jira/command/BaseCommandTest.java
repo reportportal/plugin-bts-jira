@@ -17,14 +17,10 @@
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static com.epam.reportportal.extension.bugtracking.jira.utils.TestProperties.getTestProperties;
-import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.lenient;
 
-import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
-import com.epam.reportportal.extension.bugtracking.jira.TestConf;
-import com.epam.reportportal.base.infrastructure.persistence.dao.ProjectRepository;
 import com.epam.reportportal.base.infrastructure.persistence.entity.integration.Integration;
 import com.epam.reportportal.base.infrastructure.persistence.entity.integration.IntegrationParams;
+import com.epam.reportportal.extension.bugtracking.jira.TestConf;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -36,12 +32,8 @@ import java.util.Map;
 import java.util.Properties;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.jasypt.util.text.BasicTextEncryptor;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 
@@ -50,16 +42,6 @@ import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
 @ExtendWith(MockitoExtension.class)
 @SpringJUnitConfig(classes = TestConf.class)
 public abstract class BaseCommandTest {
-
-  @Mock
-  ProjectRepository projectRepository;
-
-  @Mock
-  BasicTextEncryptor basicTextEncryptor;
-
-  @InjectMocks
-  JiraStrategy jiraStrategy;
-
 
   public static final Map<String, Object> JIRA_COMMAND_PARAMS = new HashMap<>();
   public static final String TICKET_ID_FIELD = "ticketId";
@@ -78,7 +60,6 @@ public abstract class BaseCommandTest {
 
   @BeforeAll
   protected static void before() {
-
     Properties integrationProps = getTestProperties("integration.properties");
     Map<String, Object> params = new HashMap<>();
     integrationProps.keySet()
@@ -89,17 +70,11 @@ public abstract class BaseCommandTest {
 
     Properties jobProps = getTestProperties("jira-project.properties");
     if (StringUtils.isNoneBlank((String) jobProps.get(TICKET_ID_FIELD))) {
-      JIRA_COMMAND_PARAMS.put(TICKET_ID_FIELD, jobProps.get(TICKET_ID_FIELD)); // EPMRPP-000000000
+      JIRA_COMMAND_PARAMS.put(TICKET_ID_FIELD, jobProps.get(TICKET_ID_FIELD));
     }
     if (StringUtils.isNoneBlank((String) jobProps.get(PROJECT_ID_FIELD))) {
-      JIRA_COMMAND_PARAMS.put(PROJECT_ID_FIELD, Long.valueOf(String.valueOf(jobProps.get(PROJECT_ID_FIELD)))); // Long
+      JIRA_COMMAND_PARAMS.put(PROJECT_ID_FIELD, Long.valueOf(String.valueOf(jobProps.get(PROJECT_ID_FIELD))));
     }
-  }
-
-  @BeforeEach
-  void init() {
-    lenient().when(basicTextEncryptor.decrypt(anyString()))
-        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
   }
 
   protected boolean disabled() {
@@ -108,5 +83,4 @@ public abstract class BaseCommandTest {
         .map(String::valueOf)
         .anyMatch(StringUtils::isEmpty);
   }
-
 }

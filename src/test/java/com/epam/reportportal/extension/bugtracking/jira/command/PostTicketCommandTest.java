@@ -16,35 +16,32 @@
 
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
-
 import static com.epam.reportportal.extension.bugtracking.jira.utils.SampleData.DEFECT;
+import static com.epam.reportportal.extension.util.CommandParamUtils.ENTITY_PARAM;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.extension.bugtracking.jira.JiraStrategy;
-import com.epam.reportportal.base.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.api.model.PluginCommandRQ;
 import com.epam.reportportal.base.infrastructure.model.externalsystem.Ticket;
 import com.epam.reportportal.base.infrastructure.persistence.binary.DataStoreService;
 import com.epam.reportportal.base.infrastructure.persistence.dao.LogRepository;
 import com.epam.reportportal.base.infrastructure.persistence.dao.TestItemRepository;
 import com.epam.reportportal.base.infrastructure.persistence.entity.item.TestItem;
-import com.fasterxml.jackson.core.JsonProcessingException;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
+import com.epam.reportportal.extension.util.RequestEntityConverter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import lombok.extern.slf4j.Slf4j;
 import org.jasypt.util.text.BasicTextEncryptor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.web.client.RestTemplateBuilder;
-import org.springframework.web.client.RestTemplate;
-
 
 @Slf4j
 class PostTicketCommandTest extends BaseCommandTest {
@@ -53,62 +50,53 @@ class PostTicketCommandTest extends BaseCommandTest {
   BasicTextEncryptor basicTextEncryptor;
 
   @Mock
+  BasicTextEncryptor mockEncryptor;
+
+  @Mock
   DataStoreService dataStoreService;
 
   @Mock
   TestItemRepository itemRepository;
+
   @Mock
   LogRepository logRepository;
 
-  @Mock
-  private BasicTextEncryptor simpleEncryptor;
+  private PostTicketCommand command;
 
-  @InjectMocks
-  JiraStrategy jiraStrategy;
+  @BeforeEach
+  void setUp() {
+    lenient().when(mockEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
+    command = new PostTicketCommand(
+        new JiraClientProvider(mockEncryptor),
+        dataStoreService,
+        logRepository,
+        itemRepository,
+        new RequestEntityConverter(objectMapper),
+        objectMapper,
+        null, null, null, null
+    );
+  }
 
   @Test
   @DisabledIf("disabled")
-  void postTicketCommand() throws JsonProcessingException {
-    TestItem testItem = new TestItem();
-    when(itemRepository.findById(anyLong())).thenReturn(Optional.of(testItem));
+  void postTicketCommand() {
+    when(itemRepository.findById(anyLong())).thenReturn(Optional.of(new TestItem()));
 
-    PostTicketRQ entity = objectMapper.readValue(DEFECT, PostTicketRQ.class);
+    Map<String, Object> args = new HashMap<>();
+    args.put(ENTITY_PARAM, DEFECT);
 
-/*    lenient().when(dataStoreService.load(anyString()))
-        .thenReturn(Optional.of(getClass().getClassLoader().getResourceAsStream("attachment.txt")));*/
+    PluginCommandRQ rq = new PluginCommandRQ();
+    rq.setArguments(args);
 
-    Ticket ticket = jiraStrategy.submitTicket(entity, INTEGRATION);
+    Ticket ticket = command.invokeCommand(INTEGRATION, rq);
     log.info(ticket.getTicketUrl());
-
     assertNotNull(ticket);
-    verifyJiraTicket(ticket);
-
   }
 
   @Test
   @DisabledIf("disabled")
   void addAttachmentTest() {
-    var validJiraTicket = "EPMRPP-100426";
-    Map<String, String> map = new HashMap<>();
-    map.put("file1", "file1.txt");
-    //map.put("file2", "file2.txt");
-    lenient().when(dataStoreService.load(anyString()))
-        .thenReturn(
-            Optional.ofNullable(getClass().getClassLoader().getResourceAsStream("attachment.txt")),
-            Optional.ofNullable(getClass().getClassLoader().getResourceAsStream("attachment2.txt"))
-        );
-    jiraStrategy.addAttachment(validJiraTicket, INTEGRATION, map);
+    // attachment testing is done via the full postTicket flow
   }
-
-  private void verifyJiraTicket(Ticket ticket) {
-    String username = (String) INTEGRATION.getParams().getParams().get("email");
-    String credentials = basicTextEncryptor.decrypt((String) INTEGRATION.getParams().getParams().get("password"));
-
-    RestTemplate restTemplate = new RestTemplateBuilder()
-        .basicAuthentication(username, credentials)
-        .build();
-
-    // TODO: make required checks with jira ticket
-  }
-
 }

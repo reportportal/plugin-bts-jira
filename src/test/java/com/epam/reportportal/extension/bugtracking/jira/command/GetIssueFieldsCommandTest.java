@@ -17,11 +17,35 @@
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
+import com.epam.reportportal.api.model.PluginCommandRQ;
+import com.epam.reportportal.base.infrastructure.model.externalsystem.PostFormField;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.jasypt.util.text.BasicTextEncryptor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.mockito.Mock;
 
 class GetIssueFieldsCommandTest extends BaseCommandTest {
+
+  @Mock
+  BasicTextEncryptor mockEncryptor;
+
+  private GetIssueFieldsCommand command;
+
+  @BeforeEach
+  void setUp() {
+    lenient().when(mockEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
+    command = new GetIssueFieldsCommand(new JiraClientProvider(mockEncryptor), objectMapper,
+        null, null, null, null);
+  }
 
   @ParameterizedTest
   @CsvSource(value = {
@@ -42,7 +66,13 @@ class GetIssueFieldsCommandTest extends BaseCommandTest {
       return;
     }
 
-    var response = jiraStrategy.getTicketFields(issueType, INTEGRATION);
-    assertFalse(response.isEmpty());
+    Map<String, Object> args = new HashMap<>();
+    args.put("issuetype", issueType);
+
+    PluginCommandRQ rq = new PluginCommandRQ();
+    rq.setArguments(args);
+
+    List<PostFormField> result = command.invokeCommand(INTEGRATION, rq);
+    assertFalse(result.isEmpty());
   }
 }
