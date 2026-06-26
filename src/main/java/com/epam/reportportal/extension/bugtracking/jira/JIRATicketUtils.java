@@ -23,6 +23,13 @@ package com.epam.reportportal.extension.bugtracking.jira;
 
 import static com.epam.reportportal.extension.bugtracking.jira.utils.IssueField.ASSIGNEE_FIELD;
 
+import com.epam.reportportal.base.infrastructure.model.externalsystem.PostFormField;
+import com.epam.reportportal.base.infrastructure.model.externalsystem.PostTicketRQ;
+import com.epam.reportportal.base.infrastructure.model.externalsystem.Ticket;
+import com.epam.reportportal.base.infrastructure.persistence.commons.Predicates;
+import com.epam.reportportal.base.infrastructure.rules.commons.validation.BusinessRule;
+import com.epam.reportportal.base.infrastructure.rules.commons.validation.Suppliers;
+import com.epam.reportportal.base.infrastructure.rules.exception.ErrorType;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueTypeDetails;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueUpdateDetails;
@@ -31,13 +38,6 @@ import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.User;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
-import com.epam.reportportal.base.infrastructure.model.externalsystem.PostFormField;
-import com.epam.reportportal.base.infrastructure.model.externalsystem.PostTicketRQ;
-import com.epam.reportportal.base.infrastructure.model.externalsystem.Ticket;
-import com.epam.reportportal.base.infrastructure.persistence.commons.Predicates;
-import com.epam.reportportal.base.infrastructure.rules.commons.validation.BusinessRule;
-import com.epam.reportportal.base.infrastructure.rules.commons.validation.Suppliers;
-import com.epam.reportportal.base.infrastructure.rules.exception.ErrorType;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
@@ -69,9 +69,9 @@ public class JIRATicketUtils {
   private JIRATicketUtils() {
   }
 
-  public static Ticket toTicket(IssueBean jiraIssue, String jiraUrl) {
+  public static Ticket toTicket(IssueBean jiraIssue, String jiraUrl, ObjectMapper objectMapper) {
     Ticket ticket = new Ticket();
-    JsonNode jn = new ObjectMapper().valueToTree(jiraIssue);
+    JsonNode jn = objectMapper.valueToTree(jiraIssue);
 
     ticket.setId(jiraIssue.getKey());
     ticket.setSummary(jn.get("fields").get("summary").asText());
@@ -82,7 +82,7 @@ public class JIRATicketUtils {
 
   public static IssueUpdateDetails toIssueInput(JiraRestClient client, Project jiraProject, IssueTypeDetails issueType,
       PostTicketRQ ticketRQ,
-      JIRATicketDescriptionService descriptionService) {
+      JIRATicketDescriptionService descriptionService, ObjectMapper objectMapper) {
     String userDefinedDescription = "";
     IssueUpdateDetails issueUpdateDetails = new IssueUpdateDetails();
 
@@ -162,7 +162,7 @@ public class JIRATicketUtils {
           var allowedValues = ((List<Map<String, Object>>) cimFieldInfo.get("allowedValues"));
           List<Object> arrayOfValues = new ArrayList<>();
           for (Object o : allowedValues) {
-            JsonNode jn = new ObjectMapper().valueToTree(o);
+            JsonNode jn = objectMapper.valueToTree(o);
             if (isCustomField(jn) && one.getValue().contains(jn.get("value").asText())) {
               arrayOfValues.add(Map.entry("id", jn.get("id").asText()));
             }

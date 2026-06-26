@@ -16,22 +16,46 @@
 
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
+import com.epam.reportportal.api.model.PluginCommandRQ;
 import com.epam.reportportal.base.infrastructure.model.externalsystem.Ticket;
-import java.util.Optional;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
+import java.util.HashMap;
+import java.util.Map;
+import org.jasypt.util.text.BasicTextEncryptor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-
+import org.mockito.Mock;
 
 class GetIssueCommandTest extends BaseCommandTest {
+
+  @Mock
+  BasicTextEncryptor mockEncryptor;
+
+  private GetIssueCommand command;
+
+  @BeforeEach
+  void setUp() {
+    lenient().when(mockEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
+    command = new GetIssueCommand(new JiraClientProvider(mockEncryptor), objectMapper,
+        null, null, null, null);
+  }
 
   @Test
   @DisabledIf("disabled")
   void getIssueCommand() {
-    Optional<Ticket> response = jiraStrategy.getTicket(String.valueOf((JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD))),
-        INTEGRATION);
+    Map<String, Object> args = new HashMap<>();
+    args.put("ticketId", JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD));
 
-    assertFalse(response.isEmpty());
+    PluginCommandRQ rq = new PluginCommandRQ();
+    rq.setArguments(args);
+
+    Ticket result = command.invokeCommand(INTEGRATION, rq);
+    assertNotNull(result);
   }
 }
