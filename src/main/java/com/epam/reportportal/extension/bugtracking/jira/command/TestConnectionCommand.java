@@ -31,7 +31,7 @@ public class TestConnectionCommand extends AbstractExtensionCommand<Boolean> {
     this.clientProvider = clientProvider;
     this.minProjectRole = ProjectRole.EDITOR;
     this.minOrgRole = OrganizationRole.MANAGER;
-    this.minUserRole = UserRole.ADMINISTRATOR;
+    this.minUserRole = UserRole.USER;
   }
 
   @Override
