@@ -29,8 +29,8 @@ public class TestConnectionCommand extends AbstractExtensionCommand<Boolean> {
       ProjectUserRepository projectUserRepository) {
     super(projectRepository, organizationUserRepository, organizationRepository, projectUserRepository);
     this.clientProvider = clientProvider;
-    this.minProjectRole = ProjectRole.EDITOR;
-    this.minOrgRole = OrganizationRole.MANAGER;
+    this.minProjectRole = ProjectRole.VIEWER;
+    this.minOrgRole = OrganizationRole.MEMBER;
     this.minUserRole = UserRole.USER;
   }
 
