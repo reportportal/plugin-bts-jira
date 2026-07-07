@@ -43,7 +43,7 @@ import java.util.stream.StreamSupport;
 
 public class GetIssueFieldsCommand extends AbstractExtensionCommand<List<PostFormField>> {
 
-  private static final String ISSUE_TYPE_PARAM = "issuetype";
+  private static final String ISSUE_TYPE_PARAM = "issueType";
 
   private final JiraClientProvider clientProvider;
   private final ObjectMapper objectMapper;

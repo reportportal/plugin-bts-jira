@@ -39,6 +39,7 @@ import com.epam.reportportal.extension.bugtracking.jira.command.GetIssueFieldsCo
 import com.epam.reportportal.extension.bugtracking.jira.command.GetIssueTypesCommand;
 import com.epam.reportportal.extension.bugtracking.jira.command.PostTicketCommand;
 import com.epam.reportportal.extension.bugtracking.jira.command.TestConnectionCommand;
+import com.epam.reportportal.extension.bugtracking.jira.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.command.ExtensionCommand;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -52,10 +53,8 @@ import org.jasypt.util.text.BasicTextEncryptor;
 import org.pf4j.Extension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
-import org.springframework.stereotype.Component;
 
 @Extension
-@Component
 public class JiraStrategy implements ReportPortalExtensionPoint {
 
   private static final String DOCUMENTATION_LINK_FIELD = "documentationLink";
@@ -92,15 +91,15 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
   @Autowired
   private ObjectMapper objectMapper;
 
-  private final Supplier<Map<String, ExtensionCommand<?>>> commandMapping =
-      com.google.common.base.Suppliers.memoize(this::buildCommandMapping);
+  private final Supplier<Map<String, ExtensionCommand<?>>> pluginCommandMapping =
+      new MemoizingSupplier<>(this::getIntegrationExtensionCommands);
 
   @Override
   public Map<String, ?> getPluginParams() {
     Map<String, Object> params = new HashMap<>();
     params.put(DOCUMENTATION_LINK_FIELD, DOCUMENTATION_LINK);
     params.put(NAME_FIELD, PLUGIN_NAME);
-    params.put(ALLOWED_COMMANDS, new ArrayList<>(getIntegrationExtensionCommands().keySet()));
+    params.put(ALLOWED_COMMANDS, new ArrayList<>(pluginCommandMapping.get().keySet()));
     return params;
   }
 
@@ -121,10 +120,6 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
 
   @Override
   public Map<String, ExtensionCommand<?>> getIntegrationExtensionCommands() {
-    return commandMapping.get();
-  }
-
-  private Map<String, ExtensionCommand<?>> buildCommandMapping() {
     JiraClientProvider clientProvider = new JiraClientProvider(basicTextEncryptor);
     RequestEntityConverter requestEntityConverter = new RequestEntityConverter(objectMapper);
 
