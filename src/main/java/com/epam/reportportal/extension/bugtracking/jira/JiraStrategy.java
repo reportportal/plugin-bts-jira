@@ -22,6 +22,7 @@
 package com.epam.reportportal.extension.bugtracking.jira;
 
 import com.epam.reportportal.base.infrastructure.persistence.binary.DataStoreService;
+import com.epam.reportportal.base.infrastructure.persistence.dao.IntegrationRepository;
 import com.epam.reportportal.base.infrastructure.persistence.dao.LogRepository;
 import com.epam.reportportal.base.infrastructure.persistence.dao.ProjectRepository;
 import com.epam.reportportal.base.infrastructure.persistence.dao.ProjectUserRepository;
@@ -89,6 +90,10 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
   private ProjectUserRepository projectUserRepository;
 
   @Autowired
+  private IntegrationRepository integrationRepository;
+
+
+  @Autowired
   private ObjectMapper objectMapper;
 
   private final Supplier<Map<String, ExtensionCommand<?>>> pluginCommandMapping =
@@ -119,14 +124,22 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
   }
 
   @Override
+  public Map<String, ExtensionCommand<?>> getCommonExtensionCommands() {
+    JiraClientProvider clientProvider = new JiraClientProvider(basicTextEncryptor);
+    List<ExtensionCommand<?>> commands = List.of(
+        new GetIssueCommand(clientProvider, objectMapper, projectRepository, organizationUserRepository,
+            organizationRepository, projectUserRepository, integrationRepository));
+
+    return commands.stream().collect(Collectors.toMap(NamedPluginCommand::getName, it -> it));
+  }
+
+  @Override
   public Map<String, ExtensionCommand<?>> getIntegrationExtensionCommands() {
     JiraClientProvider clientProvider = new JiraClientProvider(basicTextEncryptor);
     RequestEntityConverter requestEntityConverter = new RequestEntityConverter(objectMapper);
 
     List<ExtensionCommand<?>> commands = List.of(
         new TestConnectionCommand(clientProvider, projectRepository, organizationUserRepository,
-            organizationRepository, projectUserRepository),
-        new GetIssueCommand(clientProvider, objectMapper, projectRepository, organizationUserRepository,
             organizationRepository, projectUserRepository),
         new GetIssueTypesCommand(clientProvider, projectRepository, organizationUserRepository,
             organizationRepository, projectUserRepository),

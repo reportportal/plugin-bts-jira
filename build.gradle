@@ -4,6 +4,7 @@ plugins {
     id 'jacoco'
     id "org.openapi.generator" version "7.12.0"
     id 'com.gradleup.shadow' version '9.3.1'
+    id("io.freefair.lombok") version "9.5.0"
 }
 
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
@@ -44,17 +45,12 @@ dependencies {
         implementation 'com.epam.reportportal:service-api'
         annotationProcessor 'com.epam.reportportal:service-api'
     } else {
-        implementation 'com.github.reportportal:service-api:0141b9e'
-        annotationProcessor 'com.github.reportportal:service-api:0141b9e'
+        implementation 'com.github.reportportal:service-api:16bdc11'
+        annotationProcessor 'com.github.reportportal:service-api:16bdc11'
     }
     implementation 'jakarta.el:jakarta.el-api:6.0.1'
     implementation 'org.glassfish:jakarta.el:4.0.2'
     implementation "org.springdoc:springdoc-openapi-common:1.8.0"
-
-    compileOnly "org.projectlombok:lombok:${lombokVersion}"
-    annotationProcessor "org.projectlombok:lombok:${lombokVersion}"
-    testCompileOnly "org.projectlombok:lombok:${lombokVersion}"
-    testAnnotationProcessor "org.projectlombok:lombok:${lombokVersion}"
 
     testImplementation('org.junit.jupiter:junit-jupiter:5.11.4')
     testImplementation 'org.springframework:spring-test:6.2.3'
