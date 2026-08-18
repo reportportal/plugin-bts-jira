@@ -146,7 +146,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
         new GetIssueFieldsCommand(clientProvider, objectMapper, projectRepository, organizationUserRepository,
             organizationRepository, projectUserRepository),
         new PostTicketCommand(clientProvider, dataStoreService, logRepository, itemRepository,
-            requestEntityConverter, objectMapper, projectRepository, organizationUserRepository,
+            requestEntityConverter, objectMapper, basicTextEncryptor, projectRepository, organizationUserRepository,
             organizationRepository, projectUserRepository)
     );
 

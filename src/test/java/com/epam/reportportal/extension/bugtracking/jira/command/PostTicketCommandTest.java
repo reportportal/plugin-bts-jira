@@ -74,6 +74,7 @@ class PostTicketCommandTest extends BaseCommandTest {
         itemRepository,
         new RequestEntityConverter(objectMapper),
         objectMapper,
+        mockEncryptor,
         null, null, null, null
     );
   }
