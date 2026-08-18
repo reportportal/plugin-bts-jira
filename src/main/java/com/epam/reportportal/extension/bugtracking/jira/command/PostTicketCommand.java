@@ -42,6 +42,8 @@ import com.epam.reportportal.extension.util.RequestEntityConverter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
+import java.time.temporal.ChronoUnit;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -52,11 +54,13 @@ import java.util.regex.Pattern;
 import lombok.SneakyThrows;
 import org.apache.commons.codec.binary.Base64;
 import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang3.ThreadUtils;
 import org.apache.hc.client5.http.classic.methods.HttpPost;
 import org.apache.hc.client5.http.entity.mime.ByteArrayBody;
 import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
 import org.apache.hc.client5.http.impl.classic.HttpClients;
+import org.jasypt.util.text.BasicTextEncryptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +72,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
   private final DataStoreService dataStoreService;
   private final RequestEntityConverter requestEntityConverter;
   private final ObjectMapper objectMapper;
+  private final BasicTextEncryptor basicTextEncryptor;
   private final Supplier<JIRATicketDescriptionService> descriptionService;
 
   public PostTicketCommand(JiraClientProvider clientProvider,
@@ -76,6 +81,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
       TestItemRepository testItemRepository,
       RequestEntityConverter requestEntityConverter,
       ObjectMapper objectMapper,
+      BasicTextEncryptor basicTextEncryptor,
       ProjectRepository projectRepository,
       OrganizationUserRepository organizationUserRepository,
       OrganizationRepository organizationRepository,
@@ -85,6 +91,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
     this.dataStoreService = dataStoreService;
     this.requestEntityConverter = requestEntityConverter;
     this.objectMapper = objectMapper;
+    this.basicTextEncryptor = basicTextEncryptor;
     this.descriptionService = com.google.common.base.Suppliers.memoize(
         () -> new JIRATicketDescriptionService(logRepository, testItemRepository));
     this.minProjectRole = ProjectRole.EDITOR;
@@ -186,8 +193,8 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
     String username = JiraProps.USER_NAME.getParam(params)
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Username is not specified."));
-    String password = JiraProps.PASSWORD.getParam(params)
-        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified."));
+    String password = basicTextEncryptor.decrypt(JiraProps.PASSWORD.getParam(params)
+        .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Password is not specified.")));
 
     int count = 0;
     MultipartEntityBuilder entityBuilder = MultipartEntityBuilder.create()
@@ -195,6 +202,8 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
         .setCharset(StandardCharsets.UTF_8);
 
     for (Map.Entry<String, String> entry : binaryData.entrySet()) {
+      ThreadUtils.sleep(Duration.of(1, ChronoUnit.SECONDS)); // 1 sec delay recommended by jira cloud support
+
       Optional<InputStream> data = dataStoreService.load(entry.getKey());
       if (data.isPresent()) {
         byte[] bytes = IOUtils.toByteArray(data.get());
