@@ -30,6 +30,7 @@ import com.epam.reportportal.base.infrastructure.persistence.binary.DataStoreSer
 import com.epam.reportportal.base.infrastructure.persistence.dao.LogRepository;
 import com.epam.reportportal.base.infrastructure.persistence.dao.TestItemRepository;
 import com.epam.reportportal.base.infrastructure.persistence.entity.item.TestItem;
+import com.epam.reportportal.extension.bugtracking.BtsActivityPublisher;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
 import java.util.HashMap;
@@ -61,6 +62,9 @@ class PostTicketCommandTest extends BaseCommandTest {
   @Mock
   LogRepository logRepository;
 
+  @Mock
+  BtsActivityPublisher btsActivityPublisher;
+
   private PostTicketCommand command;
 
   @BeforeEach
@@ -75,7 +79,8 @@ class PostTicketCommandTest extends BaseCommandTest {
         new RequestEntityConverter(objectMapper),
         objectMapper,
         mockEncryptor,
-        null, null, null, null
+        null, null, null, null,
+        btsActivityPublisher
     );
   }
 
