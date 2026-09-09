@@ -45,8 +45,8 @@ dependencies {
         implementation 'com.epam.reportportal:service-api'
         annotationProcessor 'com.epam.reportportal:service-api'
     } else {
-        implementation 'com.github.reportportal:service-api:9c2e12c'
-        annotationProcessor 'com.github.reportportal:service-api:9c2e12c'
+        implementation 'com.github.reportportal:service-api:17bff83'
+        annotationProcessor 'com.github.reportportal:service-api:17bff83'
     }
     implementation 'jakarta.el:jakarta.el-api:6.0.1'
     implementation 'org.glassfish:jakarta.el:4.0.2'
