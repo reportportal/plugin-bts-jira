@@ -25,6 +25,7 @@ import com.epam.reportportal.base.infrastructure.persistence.entity.project.Proj
 import com.epam.reportportal.base.infrastructure.persistence.entity.user.UserRole;
 import com.epam.reportportal.base.infrastructure.rules.commons.validation.Suppliers;
 import com.epam.reportportal.base.infrastructure.rules.exception.ReportPortalException;
+import com.epam.reportportal.extension.bugtracking.BtsActivityPublisher;
 import com.epam.reportportal.extension.bugtracking.jira.JIRATicketDescriptionService;
 import com.epam.reportportal.extension.bugtracking.jira.JIRATicketUtils;
 import com.epam.reportportal.extension.bugtracking.jira.JiraProps;
@@ -74,6 +75,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
   private final ObjectMapper objectMapper;
   private final BasicTextEncryptor basicTextEncryptor;
   private final Supplier<JIRATicketDescriptionService> descriptionService;
+  private final BtsActivityPublisher btsActivityPublisher;
 
   public PostTicketCommand(JiraClientProvider clientProvider,
       DataStoreService dataStoreService,
@@ -85,7 +87,8 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
       ProjectRepository projectRepository,
       OrganizationUserRepository organizationUserRepository,
       OrganizationRepository organizationRepository,
-      ProjectUserRepository projectUserRepository) {
+      ProjectUserRepository projectUserRepository,
+      BtsActivityPublisher btsActivityPublisher) {
     super(projectRepository, organizationUserRepository, organizationRepository, projectUserRepository);
     this.clientProvider = clientProvider;
     this.dataStoreService = dataStoreService;
@@ -94,6 +97,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
     this.basicTextEncryptor = basicTextEncryptor;
     this.descriptionService = com.google.common.base.Suppliers.memoize(
         () -> new JIRATicketDescriptionService(logRepository, testItemRepository));
+    this.btsActivityPublisher = btsActivityPublisher;
     this.minProjectRole = ProjectRole.EDITOR;
     this.minOrgRole = OrganizationRole.MANAGER;
     this.minUserRole = UserRole.ADMINISTRATOR;
@@ -166,7 +170,9 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
       IssueBean issue = client.issuesApi().getIssue(issueKey, null, null, null, null, null, null);
       String jiraUrl = JiraProps.URL.getParam(params)
           .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION, "Url is not specified."));
-      return JIRATicketUtils.toTicket(issue, jiraUrl, objectMapper);
+      Ticket ticket = JIRATicketUtils.toTicket(issue, jiraUrl, objectMapper);
+      btsActivityPublisher.publishTicketPostedEvent(ticket, ticketRQ, pluginCommandRq.getContext(), integration);
+      return ticket;
     }
     return null;
   }

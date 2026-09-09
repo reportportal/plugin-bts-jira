@@ -34,6 +34,7 @@ import com.epam.reportportal.extension.IntegrationGroupEnum;
 import com.epam.reportportal.extension.NamedPluginCommand;
 import com.epam.reportportal.extension.PluginCommand;
 import com.epam.reportportal.extension.ReportPortalExtensionPoint;
+import com.epam.reportportal.extension.bugtracking.BtsActivityPublisher;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
 import com.epam.reportportal.extension.bugtracking.jira.command.GetIssueCommand;
 import com.epam.reportportal.extension.bugtracking.jira.command.GetIssueFieldsCommand;
@@ -96,6 +97,9 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
   @Autowired
   private ObjectMapper objectMapper;
 
+  @Autowired
+  private BtsActivityPublisher btsActivityPublisher;
+
   private final Supplier<Map<String, ExtensionCommand<?>>> pluginCommandMapping =
       new MemoizingSupplier<>(this::getIntegrationExtensionCommands);
 
@@ -147,7 +151,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
             organizationRepository, projectUserRepository),
         new PostTicketCommand(clientProvider, dataStoreService, logRepository, itemRepository,
             requestEntityConverter, objectMapper, basicTextEncryptor, projectRepository, organizationUserRepository,
-            organizationRepository, projectUserRepository)
+            organizationRepository, projectUserRepository, btsActivityPublisher)
     );
 
     return commands.stream().collect(Collectors.toMap(NamedPluginCommand::getName, it -> it));
