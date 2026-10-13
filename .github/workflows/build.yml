@@ -7,6 +7,7 @@ on:
     branches:
       - master
       - develop
+      - 'rc/**'
     paths-ignore:
       - '.github/**'
       - README.md
@@ -53,7 +54,7 @@ jobs:
 
   upload:
     needs: build
-    if: github.ref_name == 'develop' || startsWith(github.ref_name, 'feature/')
+    if: github.ref_name == 'develop' || startsWith(github.ref_name, 'feature/') || startsWith(github.ref_name, 'rc/')
     uses: reportportal/.github/.github/workflows/upload-plugin-artifact.yaml@main
     with:
       plugin_name: ${{ github.event.repository.name }}
