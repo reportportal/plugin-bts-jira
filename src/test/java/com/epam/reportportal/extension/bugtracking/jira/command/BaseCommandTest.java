@@ -21,12 +21,6 @@ import static com.epam.reportportal.extension.bugtracking.jira.utils.TestPropert
 import com.epam.reportportal.base.infrastructure.persistence.entity.integration.Integration;
 import com.epam.reportportal.base.infrastructure.persistence.entity.integration.IntegrationParams;
 import com.epam.reportportal.extension.bugtracking.jira.TestConf;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -36,6 +30,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.junit.jupiter.SpringJUnitConfig;
+import tools.jackson.databind.json.JsonMapper;
 
 // set values in 'integration.properties' to enable the tests
 @Slf4j
@@ -48,15 +43,7 @@ public abstract class BaseCommandTest {
   public static final String PROJECT_ID_FIELD = "projectId";
   public static final Integration INTEGRATION = new Integration();
 
-  public static ObjectMapper objectMapper = new ObjectMapper();
-
-  static {
-    objectMapper.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
-    objectMapper.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
-    objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    objectMapper.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    objectMapper.registerModule(new JavaTimeModule());
-  }
+  public static final JsonMapper objectMapper = TestConf.testJsonMapper();
 
   @BeforeAll
   protected static void before() {

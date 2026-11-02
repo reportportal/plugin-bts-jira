@@ -1,10 +1,9 @@
 plugins {
-    id "io.spring.dependency-management" version "1.1.7"
     id 'java'
     id 'jacoco'
-    id "org.openapi.generator" version "7.12.0"
-    id 'com.gradleup.shadow' version '9.3.1'
-    id("io.freefair.lombok") version "9.5.0"
+    id "org.openapi.generator" version "7.26.0"
+    id 'com.gradleup.shadow' version '9.6.1'
+    id("io.freefair.lombok") version "9.8.2"
 }
 
 import org.openapitools.generator.gradle.plugin.tasks.GenerateTask
@@ -38,24 +37,25 @@ java {
     targetCompatibility = JavaVersion.VERSION_25
 }
 
-ext['spring-boot.version'] = "${springBootVersion}"
-
 dependencies {
     if (releaseMode) {
         implementation 'com.epam.reportportal:service-api'
-        annotationProcessor 'com.epam.reportportal:service-api'
+        annotationProcessor('com.epam.reportportal:service-api') {
+            exclude group: 'org.springframework.modulith', module: 'spring-modulith-apt'
+        }
     } else {
-        implementation 'com.github.reportportal:service-api:73c327819e'
-        annotationProcessor 'com.github.reportportal:service-api:73c327819e'
+        implementation 'com.github.reportportal:service-api:d4b2f7c'
+        annotationProcessor('com.github.reportportal:service-api:d4b2f7c') {
+            exclude group: 'org.springframework.modulith', module: 'spring-modulith-apt'
+        }
     }
-    implementation 'jakarta.el:jakarta.el-api:6.0.1'
-    implementation 'org.glassfish:jakarta.el:4.0.2'
-    implementation "org.springdoc:springdoc-openapi-common:1.8.0"
+    implementation 'tools.jackson.core:jackson-databind'
 
-    testImplementation('org.junit.jupiter:junit-jupiter:5.11.4')
-    testImplementation 'org.springframework:spring-test:6.2.3'
-    testImplementation "org.mockito:mockito-junit-jupiter:${mockitoVersion}"
-    testImplementation 'org.hamcrest:hamcrest:3.0'
+    testImplementation 'org.springframework.boot:spring-boot-autoconfigure'
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testImplementation 'org.springframework:spring-test'
+    testImplementation 'org.mockito:mockito-junit-jupiter'
+    testImplementation 'org.hamcrest:hamcrest'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
@@ -63,7 +63,6 @@ sourceSets {
     main {
         java {
             srcDirs layout.buildDirectory.dir("generated/src/main/java").get().asFile.path
-            exclude("${layout.buildDirectory.dir("generated/src/main/java").get().asFile.path}/com/epam/reportportal/api/jira/MyselfApi.java")
         }
     }
 }
@@ -75,10 +74,10 @@ javadoc {
 
 tasks.register('generateJiraApi', GenerateTask) {
     generatorName.set("java")
-    inputSpec.set("$rootDir/src/main/resources/openapi/swagger-v3.v3.json")
-    outputDir.set(layout.buildDirectory.dir("generated").get().asFile.path)
-    configFile.set("$rootDir/src/main/resources/openapi/config.json")
-    ignoreFileOverride = "${projectDir.path}/.openapi-generator-ignore"
+    inputSpec.set(layout.projectDirectory.file("src/main/resources/openapi/swagger-v3.v3.json"))
+    outputDir.set(layout.buildDirectory.dir("generated"))
+    configFile.set(layout.projectDirectory.file("src/main/resources/openapi/config.json"))
+    ignoreFileOverride.set(layout.projectDirectory.file(".openapi-generator-ignore"))
     skipOverwrite.set(true)
 }
 
@@ -125,10 +124,10 @@ shadowJar {
     }
 }
 
-task plugin(type: Jar) {
-    getArchiveBaseName().set("plugin-${pluginID}")
+def pluginZip = tasks.register('plugin', Jar) {
+    archiveBaseName.set("plugin-${pluginID}")
     into('classes') {
-        with jar
+        with tasks.named('jar').get()
     }
     into('lib') {
         from configurations.compileClasspath
@@ -136,13 +135,9 @@ task plugin(type: Jar) {
     archiveExtension.set('zip')
 }
 
-task assemblePlugin(type: Copy) {
-    from plugin
+tasks.register('assemblePlugin', Copy) {
+    from pluginZip
     into pluginsDir
-}
-
-task assemblePlugins(type: Copy) {
-    dependsOn subprojects.assemblePlugin
 }
 
 compileJava.dependsOn generateJiraApi

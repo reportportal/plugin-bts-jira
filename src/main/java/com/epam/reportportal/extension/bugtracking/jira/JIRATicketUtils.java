@@ -38,8 +38,6 @@ import com.epam.reportportal.extension.bugtracking.jira.api.model.Project;
 import com.epam.reportportal.extension.bugtracking.jira.api.model.User;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.annotations.VisibleForTesting;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -52,6 +50,8 @@ import java.util.stream.Stream;
 import org.apache.commons.collections4.CollectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 /**
  * Provide toolscom.epam.reportportal.extension.bugtracking.jira for working with JIRA tickets(conversion).
@@ -69,20 +69,20 @@ public class JIRATicketUtils {
   private JIRATicketUtils() {
   }
 
-  public static Ticket toTicket(IssueBean jiraIssue, String jiraUrl, ObjectMapper objectMapper) {
+  public static Ticket toTicket(IssueBean jiraIssue, String jiraUrl, JsonMapper objectMapper) {
     Ticket ticket = new Ticket();
     JsonNode jn = objectMapper.valueToTree(jiraIssue);
 
     ticket.setId(jiraIssue.getKey());
-    ticket.setSummary(jn.get("fields").get("summary").asText());
-    ticket.setStatus(jn.get("fields").get("status").get("name").asText());
-    ticket.setTicketUrl(stripEnd(jiraUrl, "/") + "/browse/" + jn.get("key").asText());
+    ticket.setSummary(jn.get("fields").get("summary").asString());
+    ticket.setStatus(jn.get("fields").get("status").get("name").asString());
+    ticket.setTicketUrl(stripEnd(jiraUrl, "/") + "/browse/" + jn.get("key").asString());
     return ticket;
   }
 
   public static IssueUpdateDetails toIssueInput(JiraRestClient client, Project jiraProject, IssueTypeDetails issueType,
       PostTicketRQ ticketRQ,
-      JIRATicketDescriptionService descriptionService, ObjectMapper objectMapper) {
+      JIRATicketDescriptionService descriptionService, JsonMapper objectMapper) {
     String userDefinedDescription = "";
     IssueUpdateDetails issueUpdateDetails = new IssueUpdateDetails();
 
@@ -163,8 +163,8 @@ public class JIRATicketUtils {
           List<Object> arrayOfValues = new ArrayList<>();
           for (Object o : allowedValues) {
             JsonNode jn = objectMapper.valueToTree(o);
-            if (isCustomField(jn) && one.getValue().contains(jn.get("value").asText())) {
-              arrayOfValues.add(Map.entry("id", jn.get("id").asText()));
+            if (isCustomField(jn) && one.getValue().contains(jn.get("value").asString())) {
+              arrayOfValues.add(Map.entry("id", jn.get("id").asString()));
             }
           }
           if (one.getFieldType().equalsIgnoreCase(IssueFieldType.ARRAY.name)) {
@@ -268,6 +268,6 @@ public class JIRATicketUtils {
   }
 
   public static boolean isCustomField(JsonNode allowedValue) {
-    return allowedValue.get("self").asText().contains("/customFieldOption/");
+    return allowedValue.get("self").asString().contains("/customFieldOption/");
   }
 }

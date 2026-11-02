@@ -25,19 +25,34 @@ import com.epam.reportportal.extension.bugtracking.jira.api.UserSearchApi;
 import com.epam.reportportal.extension.bugtracking.jira.api.UsersApi;
 import com.epam.reportportal.extension.bugtracking.jira.api.client.ApiClient;
 import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.web.client.RestClient;
 
+@Slf4j
 @Getter
 public class JiraRestClient {
 
   private final ApiClient apiClient;
 
   public JiraRestClient(String url, String username, String apikey) {
+    boolean debugging = Boolean.parseBoolean(System.getenv().getOrDefault("DEBUGGER_ENABLED", "false"));
 
-    this.apiClient = new ApiClient();
+    this.apiClient = new ApiClient(buildRestClient(debugging));
     this.apiClient.setBasePath(url);
     this.apiClient.setUsername(username);
     this.apiClient.setPassword(apikey);
-    this.apiClient.setDebugging(Boolean.parseBoolean(System.getenv().getOrDefault("DEBUGGER_ENABLED", "false")));
+  }
+
+  private static RestClient buildRestClient(boolean debugging) {
+    RestClient.Builder builder = ApiClient.buildRestClientBuilder();
+    if (debugging) {
+      builder.requestInterceptor((request, body, execution) -> {
+        var response = execution.execute(request, body);
+        log.info("Jira request: {} {} -> {}", request.getMethod(), request.getURI(), response.getStatusCode());
+        return response;
+      });
+    }
+    return builder.build();
   }
 
   public ProjectsApi projectsApi() {

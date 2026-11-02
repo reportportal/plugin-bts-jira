@@ -40,7 +40,6 @@ import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
 import com.epam.reportportal.extension.command.AbstractExtensionCommand;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
@@ -64,6 +63,7 @@ import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import tools.jackson.databind.json.JsonMapper;
 
 public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
 
@@ -72,7 +72,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
   private final JiraClientProvider clientProvider;
   private final DataStoreService dataStoreService;
   private final RequestEntityConverter requestEntityConverter;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper;
   private final BasicTextEncryptor basicTextEncryptor;
   private final Supplier<JIRATicketDescriptionService> descriptionService;
   private final BtsActivityPublisher btsActivityPublisher;
@@ -82,7 +82,7 @@ public class PostTicketCommand extends AbstractExtensionCommand<Ticket> {
       LogRepository logRepository,
       TestItemRepository testItemRepository,
       RequestEntityConverter requestEntityConverter,
-      ObjectMapper objectMapper,
+      JsonMapper objectMapper,
       BasicTextEncryptor basicTextEncryptor,
       ProjectRepository projectRepository,
       OrganizationUserRepository organizationUserRepository,
