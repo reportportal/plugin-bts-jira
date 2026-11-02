@@ -32,24 +32,24 @@ import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvide
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.bugtracking.jira.utils.IssueField;
 import com.epam.reportportal.extension.command.AbstractExtensionCommand;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.StreamSupport;
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.JsonNode;
+import tools.jackson.databind.json.JsonMapper;
 
 public class GetIssueFieldsCommand extends AbstractExtensionCommand<List<PostFormField>> {
 
   private static final String ISSUE_TYPE_PARAM = "issueType";
 
   private final JiraClientProvider clientProvider;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper;
 
   public GetIssueFieldsCommand(JiraClientProvider clientProvider,
-      ObjectMapper objectMapper,
+      JsonMapper objectMapper,
       ProjectRepository projectRepository,
       OrganizationUserRepository organizationUserRepository,
       OrganizationRepository organizationRepository,
@@ -70,7 +70,8 @@ public class GetIssueFieldsCommand extends AbstractExtensionCommand<List<PostFor
   @Override
   protected List<PostFormField> invokeCommand(Integration integration, PluginCommandRQ pluginCommandRq) {
     String ticketType = (String) ofNullable(pluginCommandRq.getArguments().get(ISSUE_TYPE_PARAM))
-        .orElseThrow(() -> new ReportPortalException(ErrorType.BAD_REQUEST_ERROR, ISSUE_TYPE_PARAM + " must be provided"));
+        .orElseThrow(
+            () -> new ReportPortalException(ErrorType.BAD_REQUEST_ERROR, ISSUE_TYPE_PARAM + " must be provided"));
 
     IntegrationParams params = ofNullable(integration.getParams())
         .orElseThrow(() -> new ReportPortalException(UNABLE_INTERACT_WITH_INTEGRATION,
@@ -92,12 +93,13 @@ public class GetIssueFieldsCommand extends AbstractExtensionCommand<List<PostFor
 
     List<PostFormField> result = new ArrayList<>();
     ((List<Map<String, Object>>) issueCreateMetadata.getAdditionalProperties().get("values")).stream()
-        .map(a -> objectMapper.convertValue(a, new TypeReference<Map<String, Object>>() {}))
+        .map(a -> objectMapper.convertValue(a, new TypeReference<Map<String, Object>>() {
+        }))
         .map(field -> (JsonNode) objectMapper.valueToTree(field))
         .forEach(jsonField -> {
-          String fieldID = jsonField.get("fieldId").asText();
-          String fieldName = jsonField.get("name").asText();
-          String fieldType = jsonField.get("schema").get("type").asText();
+          String fieldID = jsonField.get("fieldId").asString();
+          String fieldName = jsonField.get("name").asString();
+          String fieldType = jsonField.get("schema").get("type").asString();
           boolean required = jsonField.get("required").asBoolean();
 
           if ("project".equalsIgnoreCase(fieldID)
@@ -112,8 +114,8 @@ public class GetIssueFieldsCommand extends AbstractExtensionCommand<List<PostFor
           if (jsonField.get("allowedValues") != null) {
             allowedList.addAll(StreamSupport.stream(jsonField.get("allowedValues").spliterator(), false)
                 .filter(JIRATicketUtils::isCustomField)
-                .map(allowedType -> new AllowedValue(allowedType.get("id").asText(),
-                    allowedType.get("value").asText()))
+                .map(allowedType -> new AllowedValue(allowedType.get("id").asString(),
+                    allowedType.get("value").asString()))
                 .toList());
           }
 
@@ -122,15 +124,16 @@ public class GetIssueFieldsCommand extends AbstractExtensionCommand<List<PostFor
               allowedList.add(new AllowedValue(component.getId(), component.getName()));
             }
           }
-          if (fieldID.equalsIgnoreCase(FIX_VERSIONS_FIELD.getValue()) || fieldID.equalsIgnoreCase(AFFECTS_VERSIONS_FIELD.getValue())) {
+          if (fieldID.equalsIgnoreCase(FIX_VERSIONS_FIELD.getValue()) || fieldID.equalsIgnoreCase(
+              AFFECTS_VERSIONS_FIELD.getValue())) {
             for (Version version : jiraProject.getVersions()) {
               allowedList.add(new AllowedValue(version.getId(), version.getName()));
             }
           }
           if (fieldID.equalsIgnoreCase(PRIORITY_FIELD.getValue()) && jsonField.get("allowedValues") != null) {
             allowedList.addAll(StreamSupport.stream(jsonField.get("allowedValues").spliterator(), false)
-                .map(allowedType -> new AllowedValue(allowedType.get("id").asText(),
-                    allowedType.get("name").asText()))
+                .map(allowedType -> new AllowedValue(allowedType.get("id").asString(),
+                    allowedType.get("name").asString()))
                 .toList());
           }
 

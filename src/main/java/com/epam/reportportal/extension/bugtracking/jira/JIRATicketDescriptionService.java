@@ -39,7 +39,6 @@ import java.util.List;
 import org.apache.commons.collections4.CollectionUtils;
 import org.apache.commons.collections4.MapUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.mime.MimeTypes;
@@ -73,7 +72,7 @@ public class JIRATicketDescriptionService {
       TestItemRepository itemRepository) {
     this.logRepository = logRepository;
     this.itemRepository = itemRepository;
-    this.mimeRepository = TikaConfig.getDefaultConfig().getMimeRepository();
+    this.mimeRepository = MimeTypes.getDefaultMimeTypes();
   }
 
   /**

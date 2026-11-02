@@ -44,7 +44,6 @@ import com.epam.reportportal.extension.bugtracking.jira.command.TestConnectionCo
 import com.epam.reportportal.extension.bugtracking.jira.utils.MemoizingSupplier;
 import com.epam.reportportal.extension.command.ExtensionCommand;
 import com.epam.reportportal.extension.util.RequestEntityConverter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -55,6 +54,7 @@ import org.jasypt.util.text.BasicTextEncryptor;
 import org.pf4j.Extension;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
+import tools.jackson.databind.json.JsonMapper;
 
 @Extension
 public class JiraStrategy implements ReportPortalExtensionPoint {
@@ -95,7 +95,7 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
 
 
   @Autowired
-  private ObjectMapper objectMapper;
+  private JsonMapper objectMapper;
 
   @Autowired
   private BtsActivityPublisher btsActivityPublisher;
@@ -112,11 +112,14 @@ public class JiraStrategy implements ReportPortalExtensionPoint {
     return params;
   }
 
+  // TODO: remove both overrides once service-api drops the deprecated abstract methods
+  @Deprecated
   @Override
   public CommonPluginCommand<?> getCommonCommand(String commandName) {
     return null;
   }
 
+  @Deprecated
   @Override
   public PluginCommand<?> getIntegrationCommand(String commandName) {
     return null;

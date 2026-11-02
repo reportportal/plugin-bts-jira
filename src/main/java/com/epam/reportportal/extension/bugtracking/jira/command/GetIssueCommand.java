@@ -23,10 +23,10 @@ import com.epam.reportportal.extension.bugtracking.jira.api.model.IssueBean;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
 import com.epam.reportportal.extension.bugtracking.jira.client.JiraRestClient;
 import com.epam.reportportal.extension.command.AbstractExtensionCommand;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import tools.jackson.databind.json.JsonMapper;
 
 public class GetIssueCommand extends AbstractExtensionCommand<Ticket> {
 
@@ -34,12 +34,12 @@ public class GetIssueCommand extends AbstractExtensionCommand<Ticket> {
   private static final String PROJECT_ID = "projectId";
 
   private final JiraClientProvider clientProvider;
-  private final ObjectMapper objectMapper;
+  private final JsonMapper objectMapper;
   private final IntegrationRepository integrationRepository;
 
 
   public GetIssueCommand(JiraClientProvider clientProvider,
-      ObjectMapper objectMapper,
+      JsonMapper objectMapper,
       ProjectRepository projectRepository,
       OrganizationUserRepository organizationUserRepository,
       OrganizationRepository organizationRepository,

@@ -1,13 +1,10 @@
 package com.epam.reportportal.extension.bugtracking.jira;
 
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.MapperFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.databind.introspect.JacksonAnnotationIntrospector;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.annotation.JsonInclude.Include;
 import org.jasypt.util.text.BasicTextEncryptor;
 import org.springframework.context.annotation.Bean;
+import tools.jackson.databind.MapperFeature;
+import tools.jackson.databind.json.JsonMapper;
 
 
 public class TestConf {
@@ -20,13 +17,19 @@ public class TestConf {
   }
 
   @Bean
-  public ObjectMapper objectMapper() {
-    ObjectMapper om = new ObjectMapper();
-    om.setAnnotationIntrospector(new JacksonAnnotationIntrospector());
-    om.configure(MapperFeature.DEFAULT_VIEW_INCLUSION, true);
-    om.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    om.configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, false);
-    om.registerModule(new JavaTimeModule());
-    return om;
+  public JsonMapper objectMapper() {
+    return testJsonMapper();
+  }
+
+  /**
+   * Mirrors the host mapper configuration of service-api ({@code JacksonConfiguration}).
+   */
+  public static JsonMapper testJsonMapper() {
+    return JsonMapper.builder()
+        .disable(MapperFeature.DETECT_PARAMETER_NAMES)
+        .enable(MapperFeature.DEFAULT_VIEW_INCLUSION)
+        .changeDefaultPropertyInclusion(incl -> incl.withValueInclusion(Include.NON_NULL))
+        .disable(MapperFeature.SORT_PROPERTIES_ALPHABETICALLY)
+        .build();
   }
 }
