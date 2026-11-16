@@ -7,6 +7,7 @@ on:
     branches:
       - master
       - develop
+      - 'rc/**'
     paths-ignore:
       - '.github/**'
       - README.md
@@ -25,11 +26,11 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5
 
-      - name: Set up JDK 21
+      - name: Set up JDK 25
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
-          java-version: '21'
+          java-version: '25'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -53,7 +54,7 @@ jobs:
 
   upload:
     needs: build
-    if: github.ref_name == 'develop' || startsWith(github.ref_name, 'feature/')
+    if: github.ref_name == 'develop' || startsWith(github.ref_name, 'feature/') || startsWith(github.ref_name, 'rc/')
     uses: reportportal/.github/.github/workflows/upload-plugin-artifact.yaml@main
     with:
       plugin_name: ${{ github.event.repository.name }}

@@ -17,16 +17,40 @@
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
 
+import com.epam.reportportal.api.model.PluginCommandRQ;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
+import org.jasypt.util.text.BasicTextEncryptor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
+import org.mockito.Mock;
+import org.springframework.beans.factory.annotation.Autowired;
 
 class TestConnectionCommandTest extends BaseCommandTest {
+
+  @Autowired
+  BasicTextEncryptor basicTextEncryptor;
+
+  @Mock
+  BasicTextEncryptor mockEncryptor;
+
+  private TestConnectionCommand command;
+
+  @BeforeEach
+  void setUp() {
+    lenient().when(mockEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
+    command = new TestConnectionCommand(new JiraClientProvider(mockEncryptor),
+        null, null, null, null);
+  }
 
   @Test
   @DisabledIf("disabled")
   void testConnection() {
-    boolean response = jiraStrategy.testConnection(INTEGRATION);
-    assertTrue(response);
+    Boolean result = command.invokeCommand(INTEGRATION, new PluginCommandRQ());
+    assertTrue(result);
   }
 }

@@ -16,21 +16,57 @@
 
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
-import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+import static org.mockito.Mockito.when;
 
-import com.epam.reportportal.model.externalsystem.Ticket;
+import com.epam.reportportal.api.model.PluginCommandRQ;
+import com.epam.reportportal.base.infrastructure.model.externalsystem.Ticket;
+import com.epam.reportportal.base.infrastructure.persistence.dao.IntegrationRepository;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
+import org.jasypt.util.text.BasicTextEncryptor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
-
+import org.mockito.Mock;
 
 class GetIssueCommandTest extends BaseCommandTest {
+
+  @Mock
+  BasicTextEncryptor mockEncryptor;
+
+  @Mock
+  IntegrationRepository integrationRepository;
+
+  private GetIssueCommand command;
+
+  @BeforeEach
+  void setUp() {
+    lenient().when(mockEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
+
+    when(integrationRepository.findProjectBtsByUrlAndLinkedProject(anyString(), anyString(), anyLong()))
+        .thenReturn(Optional.of(INTEGRATION));
+
+    command = new GetIssueCommand(new JiraClientProvider(mockEncryptor), objectMapper,
+        null, null, null, null, integrationRepository);
+  }
 
   @Test
   @DisabledIf("disabled")
   void getIssueCommand() {
-    Optional<Ticket> response = jiraStrategy.getTicket(String.valueOf((JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD))), INTEGRATION);
+    Map<String, Object> args = new HashMap<>();
+    args.put("ticketId", JIRA_COMMAND_PARAMS.get(TICKET_ID_FIELD));
 
-    assertFalse(response.isEmpty());
+    PluginCommandRQ rq = new PluginCommandRQ();
+    rq.setArguments(args);
+
+    Ticket result = command.invokeCommand(rq);
+    assertNotNull(result);
   }
 }

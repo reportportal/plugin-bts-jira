@@ -16,18 +16,38 @@
 
 package com.epam.reportportal.extension.bugtracking.jira.command;
 
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.Mockito.lenient;
+
+import com.epam.reportportal.api.model.PluginCommandRQ;
+import com.epam.reportportal.extension.bugtracking.jira.client.JiraClientProvider;
 import java.util.List;
-import org.junit.jupiter.api.Assertions;
+import org.jasypt.util.text.BasicTextEncryptor;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIf;
+import org.mockito.Mock;
 
 class GetIssueTypesCommandTest extends BaseCommandTest {
+
+  @Mock
+  BasicTextEncryptor mockEncryptor;
+
+  private GetIssueTypesCommand command;
+
+  @BeforeEach
+  void setUp() {
+    lenient().when(mockEncryptor.decrypt(anyString()))
+        .thenReturn((String) INTEGRATION.getParams().getParams().get("password"));
+    command = new GetIssueTypesCommand(new JiraClientProvider(mockEncryptor),
+        null, null, null, null);
+  }
 
   @Test
   @DisabledIf("disabled")
   void getIssueTypes() {
-    List<String> response = jiraStrategy.getIssueTypes(INTEGRATION);
-
-    Assertions.assertFalse(response.isEmpty());
+    List<String> result = command.invokeCommand(INTEGRATION, new PluginCommandRQ());
+    assertFalse(result.isEmpty());
   }
 }
