@@ -8,25 +8,28 @@ on:
       - '.github/**'
       - README.md
       - gradle.properties
+      - .jars/**
 
 env:
   GH_USER_NAME: github.actor
-  SCRIPTS_VERSION: 5.14.0
-  BOM_VERSION: 5.14.2
-  REPOSITORY_URL: 'https://maven.pkg.github.com/'
+  SCRIPTS_VERSION: 6.0.0
+  SERVICE_API_VERSION: 6.0.0
 
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
 
-      - name: Set up JDK 21
-        uses: actions/setup-java@v2
+      - name: Set up JDK 25
+        uses: actions/setup-java@v4
         with:
-          distribution: 'adopt'
-          java-version: '21'
+          distribution: 'temurin'
+          java-version: '25'
 
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
@@ -41,7 +44,14 @@ jobs:
       - name: Release with Gradle
         id: release
         run: |
-          ./gradlew release -PreleaseMode -Pscripts.version=${{env.SCRIPTS_VERSION}} -Pbom.version=${{env.BOM_VERSION}} \
+          ./gradlew release -PreleaseMode -Pscripts.version=${{env.SCRIPTS_VERSION}} \
           -PgithubUserName=${{env.GH_USER_NAME}} -PgithubToken=${{secrets.GITHUB_TOKEN}} \
-          -PpublishRepo=${{ env.REPOSITORY_URL }}${{ github.repository }} \
           -PgpgPassphrase=${{secrets.GPG_PASSPHRASE}} -PgpgPrivateKey="${{secrets.GPG_PRIVATE_KEY}}"
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=$(awk -F= '/^version=/{print $2; exit}' gradle.properties | tr -d '[:space:]')
+          gh release create "$VERSION" --title "Release $VERSION" --generate-notes
+
