@@ -61,3 +61,13 @@ jobs:
       branch_name: ${{ github.ref_name }}
       run_number: "${{ github.run_number }}"
     secrets: inherit
+
+  publish-marketplace:
+    needs: build
+    if: github.ref_name == 'develop' && github.event_name != 'pull_request'
+    uses: reportportal/.github/.github/workflows/publish-plugin-marketplace.yaml@main
+    permissions:
+      id-token: write
+      contents: read
+    with:
+      registry_url: https://dev.marketplace.reportportal.io
