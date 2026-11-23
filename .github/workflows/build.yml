@@ -69,5 +69,3 @@ jobs:
     permissions:
       id-token: write
       contents: read
-    with:
-      registry_url: https://dev.marketplace.reportportal.io
